@@ -1,7 +1,7 @@
 // =============================================
-// ELNAZLAWY — Database Seed
+// EL HOOT — Database Seed (شركة الحوت للأدوات الكهربائية)
 // Run: npm run db:seed
-// Creates: admin user, 4 stores, 4 treasuries, sample data
+// Creates: admin/owner user, 2 stores, 2 treasuries, mock products, customers, suppliers
 // =============================================
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -9,26 +9,43 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding ELNAZLAWY database...');
+  console.log('🌱 Seeding EL HOOT database...');
 
   // Ensure schema exists
-  await prisma.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS elnazlawy;`);
+  await prisma.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS elhoot;`);
 
   // Clean business data while preserving existing users
-  console.log('🧹 Cleaning business data while preserving users...');
-  await prisma.$executeRawUnsafe(`TRUNCATE TABLE elnazlawy.audit_log, elnazlawy.treasury_transactions, elnazlawy.customer_payments, elnazlawy.supplier_payments, elnazlawy.checks, elnazlawy.expenses, elnazlawy.sales_invoice_items, elhoot.sales_invoices, elnazlawy.purchase_invoice_items, elhoot.purchase_invoices, elnazlawy.stock_transfers, elnazlawy.product_price_history, elhoot.inventory, elhoot.products, elhoot.customers, elhoot.suppliers, elhoot.stores, elnazlawy.treasuries RESTART IDENTITY CASCADE;`);
+  console.log('🧹 Cleaning business data...');
+  await prisma.$executeRawUnsafe(`
+    TRUNCATE TABLE 
+      elhoot.audit_log, 
+      elhoot.treasury_transactions, 
+      elhoot.customer_payments, 
+      elhoot.supplier_payments, 
+      elhoot.checks, 
+      elhoot.expenses, 
+      elhoot.sales_invoice_items, 
+      elhoot.sales_invoices, 
+      elhoot.purchase_invoice_items, 
+      elhoot.purchase_invoices, 
+      elhoot.stock_transfers, 
+      elhoot.product_price_history, 
+      elhoot.inventory, 
+      elhoot.products, 
+      elhoot.customers, 
+      elhoot.suppliers, 
+      elhoot.stores, 
+      elhoot.treasuries 
+    RESTART IDENTITY CASCADE;
+  `);
 
   const pwd = await bcrypt.hash('123456', 10);
 
-  // === Users (من MIGRATION_PLAN.md - 2.4) ===
-  console.log('👥 Ensuring default users exist...');
+  // === Users ===
+  console.log('👥 Creating default users...');
   const userDefinitions = [
-    { username: 'openapps',    full_name: 'OPEN APPS',       phone: '01558282760', role: 'admin',      can_see_cost: true },
-    { username: 'mahmoud',     full_name: 'حاج/ محمود حسين', phone: '01006172668', role: 'manager',    can_see_cost: true },
-    { username: 'abumahmoud',  full_name: 'أبو محمود',       phone: '01129093469', role: 'manager',    can_see_cost: true },
-    { username: 'ibram',       full_name: 'إبرام يوسف',      phone: '01095463383', role: 'accountant', can_see_cost: false },
-    { username: 'rep1',        full_name: 'مندوب 1',         phone: '01000000001', role: 'rep',        can_see_cost: false },
-    { username: 'rep2',        full_name: 'مندوب 2',         phone: '01000000002', role: 'rep',        can_see_cost: false },
+    { username: 'admin',     full_name: 'صلاح إبراهيم زيدان', phone: '01000000000', role: 'admin',   can_see_cost: true },
+    { username: 'openapps',  full_name: 'الدعم الفني OPEN APPS', phone: '01558282760', role: 'admin',   can_see_cost: true },
   ];
 
   const users = await Promise.all(
@@ -56,92 +73,86 @@ async function main() {
     })
   );
 
-  const [openapps, mahmoud, abumahmoud] = users;
+  const [owner] = users;
 
-  // === Stores (من MIGRATION_PLAN.md - 2.5) ===
+  // === Stores ===
   console.log('🏢 Creating stores...');
-  const stores = await Promise.all([
-    prisma.stores.create({ data: { id: '11111111-1111-1111-1111-111111111111', name: 'المحل',             type: 'showroom', description: 'معرض النزلاوى' } }),
-    prisma.stores.create({ data: { id: '22222222-2222-2222-2222-222222222222', name: 'مخزن اللوحات',      type: 'store',    description: 'لوحات كهربائية وصاج' } }),
-    prisma.stores.create({ data: { id: '33333333-3333-3333-3333-333333333333', name: 'مخزن اللمبات',      type: 'store',    description: 'رفايع، مفاتيح، لمبات، باريز، سدد' } }),
-    prisma.stores.create({ data: { id: '44444444-4444-4444-4444-444444444444', name: 'مخزن الخراطيم',     type: 'store',    description: 'خراطيم، بواطات، سوستة' } }),
-    prisma.stores.create({ data: { id: '55555555-5555-5555-5555-555555555555', name: 'عربية كبيرة',       type: 'vehicle',  description: 'توزيع جملة', assigned_user_id: mahmoud.id } }),
-    prisma.stores.create({ data: { id: '66666666-6666-6666-6666-666666666666', name: 'عربية صغيرة',       type: 'vehicle',  description: 'أوردرات',   assigned_user_id: abumahmoud.id } }),
+  const [mainStore, panelsStore] = await Promise.all([
+    prisma.stores.create({ data: { id: '11111111-1111-1111-1111-111111111111', name: 'المخزن الرئيسي', type: 'store', description: 'المقر والمخزن الرئيسي' } }),
+    prisma.stores.create({ data: { id: '22222222-2222-2222-2222-222222222222', name: 'مخزن اللوحات والمهمات', type: 'store', description: 'لوحات وقواطع وكابلات' } }),
   ]);
 
-  // === Treasuries (من MIGRATION_PLAN.md - 2.6 + Treasury recommendations) ===
+  // === Treasuries ===
   console.log('🏦 Creating treasuries...');
   await Promise.all([
-    prisma.treasuries.create({ data: { name: 'الخزينة الرئيسية',     type: 'رئيسية',   opening_balance: 132125, current_balance: 132125, assigned_user_id: mahmoud.id } }),
-    prisma.treasuries.create({ data: { name: 'عهدة عربية كبيرة',     type: 'عهدة عربية', opening_balance: 0, current_balance: 0, assigned_user_id: mahmoud.id } }),
-    prisma.treasuries.create({ data: { name: 'عهدة عربية صغيرة',     type: 'عهدة عربية', opening_balance: 0, current_balance: 0, assigned_user_id: abumahmoud.id } }),
-    prisma.treasuries.create({ data: { name: 'خزينة الإدارة',         type: 'إدارة',     opening_balance: 0, current_balance: 0 } }),
+    prisma.treasuries.create({ data: { name: 'الخزينة الرئيسية', type: 'رئيسية', opening_balance: 50000, current_balance: 50000, assigned_user_id: owner.id } }),
+    prisma.treasuries.create({ data: { name: 'خزينة المبيعات اليومية', type: 'إدارة', opening_balance: 0, current_balance: 0 } }),
   ]);
 
-  // === Sample Customers (17 من الـ plan) ===
-  console.log('👥 Creating customers...');
-  const customers = await Promise.all([
-    prisma.customers.create({ data: { name: 'أحمد محمد علي',  phone: '01001234567', opening_balance: 5500,  balance: 5500,  route_days: ['السبت','الأربعاء'] } }),
-    prisma.customers.create({ data: { name: 'محمود عبد الله', phone: '01002345678', opening_balance: 12000, balance: 12000, route_days: ['الأحد','الخميس'] } }),
-    prisma.customers.create({ data: { name: 'علي حسن',         phone: '01003456789', opening_balance: 0,     balance: 0,     route_days: ['الإثنين'] } }),
-    prisma.customers.create({ data: { name: 'كريم سعيد',       phone: '01004567890', opening_balance: 3200,  balance: 3200,  route_days: ['الثلاثاء'] } }),
-    prisma.customers.create({ data: { name: 'يوسف إبراهيم',    phone: '01005678901', opening_balance: 800,   balance: 800,   route_days: ['السبت'] } }),
-  ]);
-
-  // === Sample Suppliers (10 من الـ plan) ===
-  console.log('🏭 Creating suppliers...');
+  // === Mock Customers ===
+  console.log('👥 Creating mock customers...');
   await Promise.all([
-    prisma.suppliers.create({ data: { name: 'السويدي للأجهزة',    phone: '01011111111', opening_balance: 15000, balance: 15000 } }),
-    prisma.suppliers.create({ data: { name: 'اللمبات المصرية',     phone: '01022222222', opening_balance: 8000,  balance: 8000  } }),
-    prisma.suppliers.create({ data: { name: 'الفيوم للكهرباء',     phone: '01033333333', opening_balance: 0,     balance: 0     } }),
-    prisma.suppliers.create({ data: { name: 'النور للأجهزة',        phone: '01044444444', opening_balance: 4500,  balance: 4500  } }),
+    prisma.customers.create({ data: { name: 'معرض النور للتجهيزات الكهربائية', phone: '01012345671', opening_balance: 8500, balance: 8500, address: 'شارع الجمهورية' } }),
+    prisma.customers.create({ data: { name: 'مؤسسة الأهرام للمقاولات', phone: '01012345672', opening_balance: 24000, balance: 24000, address: 'المنطقة الصناعية' } }),
+    prisma.customers.create({ data: { name: 'الورشة الفنية للكهرباء (م/ حسام)', phone: '01012345673', opening_balance: 4200, balance: 4200, address: 'طريق المحطة' } }),
+    prisma.customers.create({ data: { name: 'شركة الأمل للتوريدات الهندسية', phone: '01012345674', opening_balance: 0, balance: 0, address: 'ميدان التحرير' } }),
+    prisma.customers.create({ data: { name: 'معرض المستقبل للكهرباء', phone: '01012345675', opening_balance: 12000, balance: 12000, address: 'حي الزهور' } }),
   ]);
 
-  // === Sample Products (عينة من الـ 2160 منتج) ===
-  console.log('🏷️ Creating sample products...');
-  const sampleProducts = [
-    { name: 'كشاف ليد 100 وات',                    category: 'كشافات',    unit: 'piece',  units_per_carton: 12, default_sale_price: 250,  last_purchase_price: 180 },
-    { name: 'كشاف ليد 200 وات',                    category: 'كشافات',    unit: 'piece',  units_per_carton: 6,  default_sale_price: 480,  last_purchase_price: 350 },
-    { name: 'لمبة ليد 12 وات E27',                 category: 'لمبات',     unit: 'piece',  units_per_carton: 50, default_sale_price: 35,   last_purchase_price: 22  },
-    { name: 'لمبة ليد 18 وات E27',                 category: 'لمبات',     unit: 'piece',  units_per_carton: 50, default_sale_price: 55,   last_purchase_price: 35  },
-    { name: 'بريزة 16 أمبير',                       category: 'باريز',     unit: 'piece',  units_per_carton: 24, default_sale_price: 45,   last_purchase_price: 28  },
-    { name: 'مفتاح مفرد فينوس',                    category: 'مفاتيح',    unit: 'piece',  units_per_carton: 50, default_sale_price: 25,   last_purchase_price: 15  },
-    { name: 'مفتاح مزدوج فينوس',                   category: 'مفاتيح',    unit: 'piece',  units_per_carton: 50, default_sale_price: 38,   last_purchase_price: 22  },
-    { name: 'ترنز 400 وات ليد',                    category: 'ترنز',      unit: 'piece',  units_per_carton: 4,  default_sale_price: 850,  last_purchase_price: 620 },
-    { name: 'ترنز 300 وات ليد',                    category: 'ترنز',      unit: 'piece',  units_per_carton: 4,  default_sale_price: 680,  last_purchase_price: 480 },
-    { name: 'سلك 2.5 ملم مصري',                    category: 'أسلاك',     unit: 'piece',  units_per_carton: 1,  default_sale_price: 1850, last_purchase_price: 1450 },
-    { name: 'خرطوم كهرباء 1.5 ملم',                category: 'خراطيم',    unit: 'piece',  units_per_carton: 1,  default_sale_price: 2200, last_purchase_price: 1750 },
-    { name: 'شاسيه اسبوط ثنائي فضي',              category: 'شاسيهات',   unit: 'piece',  units_per_carton: 24, default_sale_price: 28,   last_purchase_price: 18  },
-    { name: 'وش بلشاسيه ابيض كون نايس',           category: 'شاسيهات',   unit: 'piece',  units_per_carton: 100, default_sale_price: 8,    last_purchase_price: 4   },
-    { name: 'دواية حديد 1.5',                       category: 'دوايات',    unit: 'piece',  units_per_carton: 12, default_sale_price: 85,   last_purchase_price: 55  },
-    { name: 'بلوفنيرا 36 وات خارج وررم السويدي',  category: 'بلوفنيرا',  unit: 'piece',  units_per_carton: 8,  default_sale_price: 320,  last_purchase_price: 220 },
+  // === Mock Suppliers ===
+  console.log('🏭 Creating mock suppliers...');
+  await Promise.all([
+    prisma.suppliers.create({ data: { name: 'شركة شنايدر إلكتريك مصر', phone: '01111111101', opening_balance: 35000, balance: 35000, address: 'القاهرة' } }),
+    prisma.suppliers.create({ data: { name: 'مصنع السويدي للكابلات واللوحات', phone: '01111111102', opening_balance: 48000, balance: 48000, address: 'العاشر من رمضان' } }),
+    prisma.suppliers.create({ data: { name: 'المؤسسة الدولية للتوزيع والاستيراد', phone: '01111111103', opening_balance: 0, balance: 0, address: 'الإسكندرية' } }),
+    prisma.suppliers.create({ data: { name: 'شركة فينوس للصناعات الحديثة', phone: '01111111104', opening_balance: 15000, balance: 15000, address: 'مدينة نصر' } }),
+  ]);
+
+  // === Mock Products (Electrical Panels & Equipment) ===
+  console.log('🏷️ Creating mock electrical products & stock...');
+  const mockProducts = [
+    { name: 'لوحة كهرباء 24 خط فينوس داخلي', category: 'لوحات كهربائية', unit: 'piece', default_sale_price: 1850, last_purchase_price: 1500, stockMain: 45, stockPanels: 20 },
+    { name: 'لوحة كهرباء 36 خط شنايدر رئيسية', category: 'لوحات كهربائية', unit: 'piece', default_sale_price: 3200, last_purchase_price: 2700, stockMain: 30, stockPanels: 15 },
+    { name: 'قاطع تيار أوتوماتيك 63 أمبير ثلاثي شنايدر', category: 'قواطع تيار', unit: 'piece', default_sale_price: 850, last_purchase_price: 680, stockMain: 60, stockPanels: 40 },
+    { name: 'قاطع تيار عمومي 100 أمبير شنايدر', category: 'قواطع تيار', unit: 'piece', default_sale_price: 1950, last_purchase_price: 1600, stockMain: 25, stockPanels: 10 },
+    { name: 'قاطع تيار أحادي 32 أمبير فينوس', category: 'قواطع تيار', unit: 'piece', default_sale_price: 145, last_purchase_price: 110, stockMain: 200, stockPanels: 150 },
+    { name: 'لفة سلك نحاس معزول 4 مم (100 متر) السويدي', category: 'كابلات وأسلاك', unit: 'piece', default_sale_price: 2650, last_purchase_price: 2350, stockMain: 80, stockPanels: 35 },
+    { name: 'لفة سلك نحاس معزول 6 مم (100 متر) السويدي', category: 'كابلات وأسلاك', unit: 'piece', default_sale_price: 3950, last_purchase_price: 3550, stockMain: 50, stockPanels: 25 },
+    { name: 'شاسيه ماجيك 3 فتحة فينوس الأصلي', category: 'مفاتيح ومآخذ', unit: 'piece', default_sale_price: 28, last_purchase_price: 18, stockMain: 500, stockPanels: 300 },
+    { name: 'لقمة مفتاح إنارة 16 أمبير ماجيك فينوس', category: 'مفاتيح ومآخذ', unit: 'piece', default_sale_price: 35, last_purchase_price: 24, stockMain: 600, stockPanels: 400 },
+    { name: 'كشاف ليد بانل مسطح 60*60 سم 48 وات أبيض', category: 'إضاءة وليد', unit: 'piece', default_sale_price: 420, last_purchase_price: 330, stockMain: 90, stockPanels: 40 },
   ];
-  const products = [];
-  for (const p of sampleProducts) {
-    const created = await prisma.products.create({ data: p });
-    products.push(created);
+
+  for (const item of mockProducts) {
+    const prod = await prisma.products.create({
+      data: {
+        name: item.name,
+        category: item.category,
+        unit: item.unit,
+        default_sale_price: item.default_sale_price,
+        last_purchase_price: item.last_purchase_price,
+        reorder_level: 5,
+        is_active: true,
+      },
+    });
+
+    // إضافة المخزون في المخزنين
+    await prisma.inventory.createMany({
+      data: [
+        { product_id: prod.id, store_id: mainStore.id, current_stock: item.stockMain, opening_balance: item.stockMain },
+        { product_id: prod.id, store_id: panelsStore.id, current_stock: item.stockPanels, opening_balance: item.stockPanels },
+      ],
+    });
   }
 
-  // === Inventory (عينة لـ 3 مخازن) ===
-  console.log('📦 Creating inventory...');
-  for (const product of products) {
-    for (const store of stores.slice(0, 4)) {
-      const stock = Math.floor(Math.random() * 50) + 5;
-      await prisma.inventory.create({
-        data: { product_id: product.id, store_id: store.id, current_stock: stock, opening_balance: stock },
-      });
-    }
-  }
-
-  console.log('✅ Seed complete!');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('📊 Database: elnazlawy schema created');
-  console.log('👤 Admin login: username=openapps, password=123456');
-  console.log('🏪 6 stores | 🏦 4 treasuries | 🏷️ 15 sample products');
-  console.log('👥 5 sample customers | 🏭 4 sample suppliers');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('✅ Seed completed successfully for El Hoot system!');
 }
 
 main()
-  .catch((e) => { console.error('❌ Seed failed:', e); process.exit(1); })
-  .finally(async () => { await prisma.$disconnect(); });
+  .catch((e) => {
+    console.error('❌ Seed error:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

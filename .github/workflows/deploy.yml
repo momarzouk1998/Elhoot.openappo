@@ -34,8 +34,8 @@ jobs:
 
             GHCR_IMAGE="ghcr.io/momarzouk1998/elhoot.openappo:latest"
             LOCAL_IMAGE="elhoot-app:latest"
-            HOST_PORT=3006
-            APP_PORT=3006
+            HOST_PORT=3008
+            APP_PORT=3008
             SERVICE_NAME="elhoot-app"
 
             GH_USER="${{ github.actor }}"
