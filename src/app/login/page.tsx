@@ -68,15 +68,16 @@ function LoginForm() {
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                اسم المستخدم أو رقم الهاتف
+                رقم الهاتف (أو اسم المستخدم)
               </label>
               <input
                 type="text"
                 value={identifier}
                 onChange={e => setIdentifier(e.target.value)}
-                placeholder="اسم المستخدم أو الهاتف"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-elhoot-500/30 focus:border-elhoot-500"
-                autoComplete="username"
+                placeholder="01002082609"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-elhoot-500/30 focus:border-elhoot-500 text-left font-mono"
+                dir="ltr"
+                autoComplete="tel"
                 required
               />
             </div>
