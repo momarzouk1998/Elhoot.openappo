@@ -1,0 +1,19 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3005",
+  "loginUser": "admin",
+  "loginPassword": "admin",
+  "executionArgs": {
+    "projectName": "elnazlawy-system",
+    "projectPath": "D:\\OPEN APPS\\DigitalOcian Projects\\elnazlawy-system",
+    "testIds": [],
+    "additionalInstruction": "Test ALL pages, forms, buttons, and authentication flow. Test login with invalid credentials, test login with valid credentials. Test every list page (customers, suppliers, products, sales, purchases, inventory, treasury, expenses, reports, route, collections, profile, admin/users, admin/routes, admin/stores). Test create forms (add customer, add product, new invoice). Test search and filter functionality. Test delete operations and the HAS_TRANSACTIONS guard. Check for console errors and 500 errors.",
+    "serverMode": "production",
+    "envs": {
+      "API_KEY": "sk-user-KgqZxFUWrDoAIqk85z-fB-sTzMEqen6quUv34C8PVaVuuxSKT1xftN79BCJNH2IcDu-Qsb35vfE02fcZvVGlerNsjzB-ys5AeZoBs9WT5vuPDGN0PSNCbFZ9iS33CD6PWGI"
+    }
+  },
+  "serverPort": 51648
+}

@@ -1,0 +1,215 @@
+# ==============================================
+# Elnazlawy System - .gitignore
+# الحماية من رفع ملفات حساسة لـ GitHub
+# ==============================================
+
+# === Internal docs (NOT to be uploaded to GitHub) ===
+DEPLOY.md
+SERVER_ACCESS.md
+*.local.md
+
+# === Dependencies & Build Artifacts ===
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+/.next/
+/out/
+/build
+/dist
+*.tsbuildinfo
+next-env.d.ts
+
+# === Environment Files (حساسة جداً) ===
+.env
+.env*.local
+.env.development
+.env.production
+.env.staging
+.env.test
+*.env
+# استثناء: .env.example فقط مسموح
+!.env.example
+
+# === SSH Keys & Certificates (حساسة جداً) ===
+*.pem
+*.key
+*.ppk
+*.pub
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+id_xmss*
+known_hosts
+authorized_keys
+config (في مجلد .ssh)
+
+# GitHub tokens / Deploy credentials
+.github-config.json
+.github/workflows/*.key
+.github/workflows/*.pem
+.github/workflows/*.ppk
+deploy-key*
+*.crt
+*.cert
+*.cer
+
+# === Database Files (تحتوي على بيانات حساسة) ===
+*.sql
+*.sql.gz
+*.sql.bak
+*.dump
+*.pgdump
+*.backup
+*.db
+*.sqlite
+*.sqlite3
+/backups/
+/db-backups/
+/dump/
+/migrations/local/
+/sql/local/
+
+# === Sensitive Logs (قد تحتوي tokens أو data) ===
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+error.log
+access.log
+combined.log
+*.log.gz
+
+# === Sensitive Documentation ===
+# مجلد MD يحتوي على معلومات حساسة (IP السيرفر، credentials، إلخ)
+/MD/
+# وثائق النظام الكاملة
+/specs/
+/docs/private/
+SECURITY.md
+SECRETS.md
+
+# === IDE & System Files ===
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.fleet/
+.augment/
+
+# === OS Files ===
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+$RECYCLE.BIN/
+
+# === Testing & Coverage ===
+/coverage
+/.nyc_output
+*.lcov
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# === Vercel & Deployment ===
+.vercel
+.netlify
+.vercelignore
+.turbo/
+
+# === Temporary & Cache Files ===
+.tmp/
+.temp/
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+.node_repl_history
+*.tgz
+.yarn-integrity
+
+# === Docker & CI artifacts ===
+Dockerfile.local
+docker-compose.override.yml
+.docker/
+
+# === Misc / Personal ===
+*.bak
+*.orig
+*.rej
+*.patch
+.history/
+.tmp/
+
+# === Local config files ===
+.envrc
+.direnv/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# === Editor temp files ===
+*.tmp
+*.temp
+*#
+
+# === Local uploads & user data ===
+/uploads/
+/public/uploads/
+/storage/
+/tmp-user-data/
+
+# === Prisma local files ===
+prisma/local.db
+prisma/dev.db
+prisma/migrations/dev/
+
+# === TypeScript ===
+*.tsbuildinfo
+next-env.d.ts
+
+# === Specific files for Mazaya ===
+# نسخة احتياطية من .env قد تنزل بالغلط
+.env.backup
+.env.old
+.env.bak
+.env.sample
+ghcr-token*
+*.token
+gh-token*
+github-token*
+
+# === Workflow-specific secrets that may leak ===
+GITHUB_TOKEN
+GH_TOKEN
+GHCR_TOKEN
+
+# === Local development overrides ===
+.local/
+local-settings.json
+config.local.json
+config.local.yaml
+config.local.yml
+settings.local.json
+
+testsprite_tests\tmp\config.json

@@ -1,0 +1,16 @@
+{
+  "name": "معرض النزلاوي - نظام الإدارة",
+  "short_name": "النزلاوي",
+  "description": "نظام إدارة معرض النزلاوي للأجهزة الكهربائية والإضاءة",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f0f2f5",
+  "theme_color": "#f56226",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

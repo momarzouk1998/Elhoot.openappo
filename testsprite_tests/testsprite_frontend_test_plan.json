@@ -1,0 +1,1864 @@
+[
+  {
+    "id": "TC001",
+    "title": "User logs in and reaches the dashboard",
+    "description": "This verifies that a valid user can sign in and land on the dashboard successfully.",
+    "category": "Authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the dashboard is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify dashboard summary content is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Log in and load the dashboard",
+    "description": "This test verifies that a valid user can sign in and reach the dashboard with the expected summary content.",
+    "category": "Authentication and session bootstrap",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the dashboard is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify summary metrics are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Rep completes a sales invoice and updates stock and customer balance",
+    "description": "This verifies that completing a sales invoice deducts stock and updates the customer balance.",
+    "category": "Sales Invoices",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /sales/new"
+      },
+      {
+        "type": "action",
+        "description": "Add a product to the invoice"
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid quantity for the product"
+      },
+      {
+        "type": "action",
+        "description": "Complete the invoice"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice is completed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify stock is deducted and the customer balance is updated"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Create a sales invoice with multiple items and print it",
+    "description": "This test verifies that a user can complete a sales invoice with multiple items, update downstream stock and customer balance, and open the printable invoice view.",
+    "category": "Sales invoice completion with stock deduction and customer balance update",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to the sales invoices page"
+      },
+      {
+        "type": "action",
+        "description": "Start a new sales invoice"
+      },
+      {
+        "type": "action",
+        "description": "Add multiple items to the invoice"
+      },
+      {
+        "type": "action",
+        "description": "Complete the invoice"
+      },
+      {
+        "type": "action",
+        "description": "Open the print view for the completed invoice"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice is completed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the printable invoice view is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Dashboard shows key operational and financial summaries",
+    "description": "This verifies that the dashboard presents the main KPI and alert sections a user relies on for daily monitoring.",
+    "category": "Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify sales KPI content is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify alert and summary content is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Record a customer collection",
+    "description": "This test verifies that a user can post a customer payment linked to an invoice and see treasury and customer balances updated.",
+    "category": "Treasury payment posting (customer collections, supplier payments, expenses)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to the customer payments page"
+      },
+      {
+        "type": "action",
+        "description": "Start a new customer payment"
+      },
+      {
+        "type": "action",
+        "description": "Link the payment to a customer invoice"
+      },
+      {
+        "type": "action",
+        "description": "Save the payment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the customer payment is recorded"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify treasury and customer balances are updated"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Record a customer collection and reduce the customer balance",
+    "description": "This verifies that a user can create a customer payment linked to an invoice and see the customer balance decrease afterward.",
+    "category": "Payments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open customer payments"
+      },
+      {
+        "type": "action",
+        "description": "Create a new customer collection"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the amount field with a valid payment amount"
+      },
+      {
+        "type": "action",
+        "description": "Select a related invoice"
+      },
+      {
+        "type": "action",
+        "description": "Save the payment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the customer balance is reduced"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Record a supplier payment",
+    "description": "This test verifies that a user can post a supplier payment linked to an invoice and see treasury and supplier balances updated.",
+    "category": "Treasury payment posting (customer collections, supplier payments, expenses)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to the supplier payments page"
+      },
+      {
+        "type": "action",
+        "description": "Start a new supplier payment"
+      },
+      {
+        "type": "action",
+        "description": "Link the payment to a supplier invoice"
+      },
+      {
+        "type": "action",
+        "description": "Save the payment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the supplier payment is recorded"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify treasury and supplier balances are updated"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Record a supplier payment and reduce the supplier balance",
+    "description": "This verifies that a user can create a supplier payment linked to an invoice and see the supplier balance decrease afterward.",
+    "category": "Payments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open supplier payments"
+      },
+      {
+        "type": "action",
+        "description": "Create a new supplier payment"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the amount field with a valid payment amount"
+      },
+      {
+        "type": "action",
+        "description": "Select a related invoice"
+      },
+      {
+        "type": "action",
+        "description": "Save the payment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the supplier balance is reduced"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Create a new user with role and permissions",
+    "description": "Verifies that an admin can create a user, assign role and permissions, and save the new account successfully.",
+    "category": "Admin Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /admin/users"
+      },
+      {
+        "type": "action",
+        "description": "Create a new user"
+      },
+      {
+        "type": "action",
+        "description": "Assign a role to the new user"
+      },
+      {
+        "type": "action",
+        "description": "Assign permissions to the new user"
+      },
+      {
+        "type": "action",
+        "description": "Save the user"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new user appears in the users list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the assigned role and permissions are reflected for the new user"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "Dashboard highlights products needing replenishment",
+    "description": "This verifies that inventory-related alerts are visible from the dashboard for low-stock follow-up.",
+    "category": "Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the inventory-related alerts section"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify products needing replenishment are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "Record an expense",
+    "description": "This test verifies that a user can record an expense and see the treasury movement reflected in balances and movements.",
+    "category": "Treasury payment posting (customer collections, supplier payments, expenses)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to the treasury expenses page"
+      },
+      {
+        "type": "action",
+        "description": "Start a new expense"
+      },
+      {
+        "type": "action",
+        "description": "Save the expense"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the expense is recorded"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the treasury balance is updated"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC013",
+    "title": "Create a purchase invoice with multiple items",
+    "description": "Verifies that a user can start a purchase invoice, add multiple products, enter quantities and prices, and save the invoice successfully.",
+    "category": "Purchase Invoices",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /purchases/new"
+      },
+      {
+        "type": "action",
+        "description": "Start a new purchase invoice"
+      },
+      {
+        "type": "action",
+        "description": "Add a product to the invoice"
+      },
+      {
+        "type": "action",
+        "description": "Add another product to the invoice"
+      },
+      {
+        "type": "action",
+        "description": "Fill in valid quantities and prices for the listed products"
+      },
+      {
+        "type": "action",
+        "description": "Save the invoice"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the purchase invoice is created"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice shows multiple line items"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "Block access to hidden cost information",
+    "description": "This test verifies that a user without the required permission cannot view product cost data in the product list.",
+    "category": "Permission enforcement for role-based module/cost visibility",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /products"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify product listings are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify cost information is hidden"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Create an expense and reduce treasury balance",
+    "description": "This verifies that a user can record a new expense and see the treasury balance decrease afterward.",
+    "category": "Expenses",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /expenses"
+      },
+      {
+        "type": "action",
+        "description": "Create a new expense"
+      },
+      {
+        "type": "action",
+        "description": "Choose an expense category"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the amount field with a valid expense amount"
+      },
+      {
+        "type": "action",
+        "description": "Save the expense"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the treasury balance is updated"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Create or update a store successfully",
+    "description": "Verifies that an admin can add or edit a store and save the store details.",
+    "category": "Admin Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /admin/stores"
+      },
+      {
+        "type": "action",
+        "description": "Create a new store or open an existing store for editing"
+      },
+      {
+        "type": "action",
+        "description": "Update the store details"
+      },
+      {
+        "type": "action",
+        "description": "Save the store details"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the store appears in the stores list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the saved store details are reflected"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Complete a purchase invoice and update supplier balances",
+    "description": "Verifies that completing a purchase invoice refreshes the supplier balance and updates the last purchase price for the purchased products.",
+    "category": "Purchase Invoices",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /purchases/new"
+      },
+      {
+        "type": "action",
+        "description": "Start a new purchase invoice"
+      },
+      {
+        "type": "action",
+        "description": "Add a product to the invoice"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid quantity and purchase price for the product"
+      },
+      {
+        "type": "action",
+        "description": "Complete the invoice"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the purchase invoice is completed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the supplier balance is updated and the product last purchase price is refreshed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "Create a purchase invoice and update stock cost",
+    "description": "This test verifies that a user can create a purchase invoice and see inventory reflected with an updated last purchase price.",
+    "category": "Purchase invoice creation and supplier balance/last purchase price update",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to the purchase invoices page"
+      },
+      {
+        "type": "action",
+        "description": "Create a new purchase invoice"
+      },
+      {
+        "type": "action",
+        "description": "Add products and quantities to the invoice"
+      },
+      {
+        "type": "action",
+        "description": "Save the purchase invoice"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the purchase invoice is saved"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify updated stock cost information is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Update route configurations",
+    "description": "Verifies that an admin can review route settings and save updated route configurations.",
+    "category": "Admin Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /admin/routes"
+      },
+      {
+        "type": "action",
+        "description": "Review the existing route configurations"
+      },
+      {
+        "type": "action",
+        "description": "Update a route configuration"
+      },
+      {
+        "type": "action",
+        "description": "Save the route updates"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated route configuration is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC020",
+    "title": "Create a customer with an opening balance",
+    "description": "Verifies that a user can create a new customer and save an opening balance successfully.",
+    "category": "Customers",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /customers"
+      },
+      {
+        "type": "action",
+        "description": "Create a new customer"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the customer details"
+      },
+      {
+        "type": "action",
+        "description": "Fill in an opening balance"
+      },
+      {
+        "type": "action",
+        "description": "Save the customer"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the customer is created"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the opening balance is shown for the customer"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC021",
+    "title": "Transfer stock between stores",
+    "description": "This test verifies that a user can transfer inventory from one store to another and see the quantities updated in both locations.",
+    "category": "Stock transfers between stores",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /inventory/transfers"
+      },
+      {
+        "type": "action",
+        "description": "Start a new stock transfer"
+      },
+      {
+        "type": "action",
+        "description": "Choose a source store and a destination store"
+      },
+      {
+        "type": "action",
+        "description": "Select products and quantities for the transfer"
+      },
+      {
+        "type": "action",
+        "description": "Submit the transfer"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the transfer is recorded"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify inventory quantities are updated in both stores"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC022",
+    "title": "Create a customer payment with the linked invoice details",
+    "description": "This verifies that a user can open the customer payment form and complete it with the required invoice linkage and amount.",
+    "category": "Payments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open customer payments"
+      },
+      {
+        "type": "action",
+        "description": "Create a new customer collection"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the amount field with a valid payment amount"
+      },
+      {
+        "type": "action",
+        "description": "Select a related invoice"
+      },
+      {
+        "type": "action",
+        "description": "Save the payment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new customer payment appears in the list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC023",
+    "title": "Create a supplier with an opening balance",
+    "description": "Verifies that a user can create a new supplier and save an opening balance successfully.",
+    "category": "Suppliers",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /suppliers"
+      },
+      {
+        "type": "action",
+        "description": "Create a new supplier"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the supplier details"
+      },
+      {
+        "type": "action",
+        "description": "Fill in an opening balance"
+      },
+      {
+        "type": "action",
+        "description": "Save the supplier"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the supplier is created"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the opening balance is shown for the supplier"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC024",
+    "title": "Rep creates a sales invoice with multiple items and saves it in progress",
+    "description": "This verifies that a sales invoice can be started, populated with more than one product, and saved without completion.",
+    "category": "Sales Invoices",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /sales/new"
+      },
+      {
+        "type": "action",
+        "description": "Add a product to the invoice"
+      },
+      {
+        "type": "action",
+        "description": "Add another product to the invoice"
+      },
+      {
+        "type": "action",
+        "description": "Save the invoice as in progress"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice is saved as in progress"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify multiple invoice items are retained"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC025",
+    "title": "Create a supplier payment with the linked invoice details",
+    "description": "This verifies that a user can open the supplier payment form and complete it with the required invoice linkage and amount.",
+    "category": "Payments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open supplier payments"
+      },
+      {
+        "type": "action",
+        "description": "Create a new supplier payment"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the amount field with a valid payment amount"
+      },
+      {
+        "type": "action",
+        "description": "Select a related invoice"
+      },
+      {
+        "type": "action",
+        "description": "Save the payment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new supplier payment appears in the list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC026",
+    "title": "Review a customer's statement and transactions",
+    "description": "Verifies that opening an existing customer shows their account statement along with linked invoices and payments.",
+    "category": "Customers",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /customers"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing customer"
+      },
+      {
+        "type": "action",
+        "description": "Review the account statement"
+      },
+      {
+        "type": "action",
+        "description": "Review the linked invoices and payments"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the customer statement is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify linked invoices and payments are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC027",
+    "title": "Review low-stock items",
+    "description": "This test verifies that a user can review inventory levels and filter the list to low-stock items.",
+    "category": "Inventory stock review and low-stock filtering",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /inventory"
+      },
+      {
+        "type": "action",
+        "description": "Apply the low-stock filter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify inventory items are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify low-stock items are shown"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC028",
+    "title": "Review a supplier's payments and checks",
+    "description": "Verifies that opening an existing supplier shows their payment history and linked checks.",
+    "category": "Suppliers",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /suppliers"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing supplier"
+      },
+      {
+        "type": "action",
+        "description": "Review the payment history"
+      },
+      {
+        "type": "action",
+        "description": "Review the linked checks"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the supplier payment history is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify linked checks are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC029",
+    "title": "Filter profit and loss results by date range",
+    "description": "Verifies that a user can open the profit and loss report, choose a date range, and see results for that period.",
+    "category": "Reports",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /reports/profit-loss"
+      },
+      {
+        "type": "action",
+        "description": "Set a valid start date in the date range"
+      },
+      {
+        "type": "action",
+        "description": "Set a valid end date in the date range"
+      },
+      {
+        "type": "action",
+        "description": "Apply the date range filter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profit and loss results are displayed for the selected period"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC030",
+    "title": "View treasury balances and movements",
+    "description": "This test verifies that a user can open the treasury overview and review current balances and movement history.",
+    "category": "Treasury payment posting (customer collections, supplier payments, expenses)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /treasury"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify treasury balances are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify treasury movements are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC031",
+    "title": "Filter account statements by date range",
+    "description": "Verifies that a user can open account statements, choose a date range, and see statements for that period.",
+    "category": "Reports",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /reports/statements"
+      },
+      {
+        "type": "action",
+        "description": "Set a valid start date in the date range"
+      },
+      {
+        "type": "action",
+        "description": "Set a valid end date in the date range"
+      },
+      {
+        "type": "action",
+        "description": "Apply the date range filter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify account statements are displayed for the selected period"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC032",
+    "title": "Review personal sales records",
+    "description": "A rep can open the sales page and see their own sales records and totals.",
+    "category": "My Inventory and My Sales",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /my-sales"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify personal sales records are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify sales totals are visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC033",
+    "title": "Create a new check and see it listed with its status",
+    "description": "This verifies that a user can create a check with direction and details and see the saved check in the checks list.",
+    "category": "Checks",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the checks section"
+      },
+      {
+        "type": "action",
+        "description": "Create a new check"
+      },
+      {
+        "type": "action",
+        "description": "Fill in valid check details"
+      },
+      {
+        "type": "action",
+        "description": "Select a check direction"
+      },
+      {
+        "type": "action",
+        "description": "Save the check"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new check appears in the list with a status"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC034",
+    "title": "Review assigned inventory items",
+    "description": "A rep can open the inventory page and see the stock items assigned to them with availability information.",
+    "category": "My Inventory and My Sales",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /my-inventory"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify assigned inventory items are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify item availability is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC035",
+    "title": "Review route plan",
+    "description": "A rep can open the route page and see the planned route days with assigned customers.",
+    "category": "Collections and Route Worklists",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /route"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify planned route days are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify assigned customers are visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC036",
+    "title": "User sees an invalid login message",
+    "description": "This verifies that an incorrect username or password is rejected with visible feedback.",
+    "category": "Authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with invalid-user"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with invalid-password"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an invalid login message is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC037",
+    "title": "Review assigned collections",
+    "description": "A rep can open the collections page and see their assigned collection worklist.",
+    "category": "Collections and Route Worklists",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /collections"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify assigned collections are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the collections worklist is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC038",
+    "title": "Edit an existing expense",
+    "description": "This verifies that a user can change an existing expense amount or category and save the updated record.",
+    "category": "Expenses",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /expenses"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing expense"
+      },
+      {
+        "type": "action",
+        "description": "Change the expense amount or category"
+      },
+      {
+        "type": "action",
+        "description": "Save the changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated expense appears in the list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC039",
+    "title": "View account details and change password",
+    "description": "Verifies that a user can review their profile information and save a new password from the profile page.",
+    "category": "Profile",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /profile"
+      },
+      {
+        "type": "action",
+        "description": "Review the account details"
+      },
+      {
+        "type": "action",
+        "description": "Start the password change flow"
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid new password"
+      },
+      {
+        "type": "action",
+        "description": "Save the new password"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the profile page shows a successful password change confirmation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the account details remain visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC040",
+    "title": "Review today collections and route tasks together",
+    "description": "A rep can move between the collections and route pages to review the daily follow-up work without losing access to either page.",
+    "category": "Collections and Route Worklists",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /collections"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the route plan"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify planned route days are displayed"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open collections"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify assigned collections are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC041",
+    "title": "Update an existing check status",
+    "description": "This verifies that a user can open an existing check, change its status to an allowed state, and save the update.",
+    "category": "Checks",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the checks section"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing check"
+      },
+      {
+        "type": "action",
+        "description": "Change the check status to another allowed state"
+      },
+      {
+        "type": "action",
+        "description": "Save the changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated check status is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC042",
+    "title": "Switch between inventory and sales views",
+    "description": "A rep can navigate from inventory to sales and back to confirm both personal pages are available during normal browser use.",
+    "category": "My Inventory and My Sales",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /my-inventory"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open my sales"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify personal sales records are displayed"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open my inventory"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify assigned inventory items are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC043",
+    "title": "Delete a customer with no linked transactions",
+    "description": "Verifies that a customer with no linked transactions can be deleted successfully from the customer list or detail view.",
+    "category": "Customers",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /customers"
+      },
+      {
+        "type": "action",
+        "description": "Create a new customer"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the customer details"
+      },
+      {
+        "type": "action",
+        "description": "Save the customer"
+      },
+      {
+        "type": "action",
+        "description": "Delete the customer"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the customer is removed from the customer list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an empty or deleted state is shown for the customer"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC044",
+    "title": "Rep is warned when completing a sales invoice with insufficient stock",
+    "description": "This verifies that an invoice with quantity above available stock cannot be completed and shows a stock validation message.",
+    "category": "Sales Invoices",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /sales/new"
+      },
+      {
+        "type": "action",
+        "description": "Add a product to the invoice"
+      },
+      {
+        "type": "action",
+        "description": "Enter a quantity greater than available stock for the product"
+      },
+      {
+        "type": "action",
+        "description": "Complete the invoice"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an insufficient stock message is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC045",
+    "title": "Prevent saving a payment without the required amount",
+    "description": "This verifies that the payment form blocks submission when the required amount is missing and shows validation feedback.",
+    "category": "Payments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open customer payments"
+      },
+      {
+        "type": "action",
+        "description": "Create a new customer collection"
+      },
+      {
+        "type": "action",
+        "description": "Select a related invoice"
+      },
+      {
+        "type": "action",
+        "description": "Save the payment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a payment validation error is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC046",
+    "title": "See empty personal sales history when none exists",
+    "description": "A rep with no sales history sees an empty state instead of incorrect sales totals or records.",
+    "category": "My Inventory and My Sales",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /my-sales"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an empty state message is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no personal sales records are displayed"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC047",
+    "title": "See empty collections worklist when nothing is assigned",
+    "description": "A rep with no assigned collection work items sees an empty state instead of stale or misleading data.",
+    "category": "Collections and Route Worklists",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /collections"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an empty state message is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no assigned collections are displayed"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC048",
+    "title": "See empty assigned inventory when none is available",
+    "description": "A rep with no assigned inventory sees an empty state instead of unavailable items or stale stock counts.",
+    "category": "My Inventory and My Sales",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /my-inventory"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an empty state message is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no assigned inventory items are displayed"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC049",
+    "title": "See empty route plan when nothing is scheduled",
+    "description": "A rep with no route plan assigned sees an empty state instead of an incomplete schedule.",
+    "category": "Collections and Route Worklists",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /route"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an empty state message is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no planned route days are displayed"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC050",
+    "title": "Block saving a check with incomplete required details",
+    "description": "This verifies that the check form shows validation feedback when required details are omitted.",
+    "category": "Checks",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the checks section"
+      },
+      {
+        "type": "action",
+        "description": "Create a new check"
+      },
+      {
+        "type": "action",
+        "description": "Save the check"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a check validation error is visible"
+      }
+    ],
+    "priority": "Low"
+  }
+]

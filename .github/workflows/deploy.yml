@@ -1,0 +1,109 @@
+# ========================================
+# Deploy to Server — SSH-First Approach
+# Waits for Build & Push to GHCR to finish first
+# Uses GITHUB_TOKEN (auto-provisioned) to pull the image.
+# ========================================
+
+name: Deploy to Server
+
+on:
+  workflow_run:
+    workflows: ["Build & Push to GHCR"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy via SSH
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 10m
+          script: |
+            set -e
+
+            GHCR_IMAGE="ghcr.io/momarzouk1998/elhoot.openappo:latest"
+            LOCAL_IMAGE="elhoot-app:latest"
+            HOST_PORT=3006
+            APP_PORT=3006
+            SERVICE_NAME="elhoot-app"
+
+            GH_USER="${{ github.actor }}"
+            GH_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+
+            echo "=== [1/8] Logging in to GHCR (using auto-provisioned GITHUB_TOKEN) ==="
+            echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_USER" --password-stdin
+
+            echo "=== [2/8] Pulling latest image from GHCR ==="
+            docker pull "$GHCR_IMAGE"
+
+            echo "=== [3/8] Tagging local image ==="
+            docker tag "$GHCR_IMAGE" "$LOCAL_IMAGE"
+            echo "  Tagged as $LOCAL_IMAGE"
+
+            echo "=== [4/8] Logging out of GHCR (rotate credentials) ==="
+            docker logout ghcr.io >/dev/null
+
+            echo "=== [5/8] Ensure env file exists on the host ==="
+            ENV_FILE=/tmp/elhoot.env
+            if [ -f /opt/elhoot/.env ]; then
+              cp /opt/elhoot/.env "$ENV_FILE"
+              echo "  Loaded environment file from /opt/elhoot/.env"
+            else
+              echo "  /opt/elhoot/.env not found — creating an empty env file"
+              : > "$ENV_FILE"
+            fi
+
+            echo "=== [6/8] Update or create swarm service (zero-downtime) ==="
+            if docker service inspect $SERVICE_NAME >/dev/null 2>&1; then
+              echo "  Service exists — performing rolling update (no downtime)"
+              docker service update \
+                --image "$LOCAL_IMAGE" \
+                --env-add NODE_ENV=production \
+                --env-add PORT=${APP_PORT} \
+                --force \
+                $SERVICE_NAME
+            else
+              echo "  Service not found — creating fresh"
+              ENV_FLAGS=(--env NODE_ENV=production --env PORT=${APP_PORT})
+              docker service create \
+                --name $SERVICE_NAME \
+                --replicas 1 \
+                --network host \
+                --env-file "$ENV_FILE" \
+                "${ENV_FLAGS[@]}" \
+                --restart-condition on-failure \
+                --restart-max-attempts 5 \
+                "$LOCAL_IMAGE"
+            fi
+
+            echo "=== [7/8] Waiting 30s for service to settle ==="
+            sleep 30
+
+            echo "=== Service status ==="
+            docker service ps $SERVICE_NAME --no-trunc
+
+            echo ""
+            echo "=== Internal health check (127.0.0.1:${HOST_PORT}) ==="
+            INT_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:${HOST_PORT}/" || echo "000")
+            echo "HTTP: $INT_CODE"
+
+            echo "=== External health check (https://elhoot.openappo.com) ==="
+            EXT_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://elhoot.openappo.com/ || echo "000")
+            echo "HTTP: $EXT_CODE"
+
+            echo "=== [8/8] Cleaning up old images ==="
+            docker image prune -f
+
+            echo ""
+            echo "=== Deployment complete ==="

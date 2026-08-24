@@ -1,0 +1,161 @@
+@import "tailwindcss";
+
+@theme {
+  /* 🟦 Brand Primary — Electric Navy #0f4185 */
+  --color-elhoot-50:  #eef4ff;
+  --color-elhoot-100: #dbe8fe;
+  --color-elhoot-200: #bfd7fe;
+  --color-elhoot-300: #93bbfd;
+  --color-elhoot-400: #609afa;
+  --color-elhoot-500: #0f4185;
+  --color-elhoot-600: #002b61;
+  --color-elhoot-700: #00204a;
+  --color-elhoot-800: #001735;
+  --color-elhoot-900: #000e22;
+
+  /* 🟧 Secondary Accent — Caution Orange #f7941d */
+  --color-amber-500: #f7941d;
+  --color-amber-600: #d97706;
+
+  /* Backward Compatibility */
+  --color-nazlawy-50:  #eef4ff;
+  --color-nazlawy-100: #dbe8fe;
+  --color-nazlawy-200: #bfd7fe;
+  --color-nazlawy-300: #93bbfd;
+  --color-nazlawy-400: #609afa;
+  --color-nazlawy-500: #0f4185;
+  --color-nazlawy-600: #002b61;
+  --color-nazlawy-700: #00204a;
+  --color-nazlawy-800: #001735;
+  --color-nazlawy-900: #000e22;
+  --color-slate-650:  #1e293b;
+
+  --font-family-sans: var(--font-cairo, "Cairo", "Segoe UI", Tahoma, sans-serif);
+
+  /* ====== Mobile animations ====== */
+  --animate-slide-in: slide-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-fade-in: fade-in 0.18s ease-out;
+  --animate-shimmer: shimmer 1.4s linear infinite;
+}
+
+@keyframes slide-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes shimmer {
+  0%   { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+:root {
+  --font-cairo: var(--font-cairo, "Cairo"), "Segoe UI", Tahoma, sans-serif;
+  --color-bg-body: #f8fafc;
+  --color-bg-card: #ffffff;
+  --color-surface-2: #f1f5f9;
+  --color-sidebar: linear-gradient(180deg, #002b61 0%, #0f4185 100%);
+  --color-sidebar-accent: #f7941d;
+}
+
+html { direction: rtl; }
+body {
+  font-family: var(--font-cairo);
+  background: linear-gradient(135deg, #f5f5f5 0%, #ececec 100%);
+  color: #1c1c1c;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.bg-header-gradient {
+  background: var(--color-sidebar);
+}
+
+* { box-sizing: border-box; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
+
+@layer components {
+  .btn-primary {
+    @apply bg-nazlawy-500 hover:bg-nazlawy-600 text-white font-semibold px-5 py-2.5 rounded-lg transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 font-medium px-5 py-2.5 rounded-lg transition-all;
+  }
+  .btn-danger {
+    @apply bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg transition-all;
+  }
+  .input-field {
+    @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-nazlawy-500/40 focus:border-nazlawy-500 transition-all bg-white text-gray-900;
+  }
+  .card {
+    @apply bg-white rounded-xl p-5 border border-gray-200;
+    box-shadow: 0 10px 30px -12px rgba(17, 19, 21, 0.12);
+  }
+  .table-header {
+    @apply bg-gray-50 text-gray-700 text-sm font-semibold uppercase tracking-wide;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border;
+  }
+
+  /* ===== Table nowrap: تفادي كسر النص في الجداول (خاصة الموبايل) ===== */
+  table td, table th {
+    white-space: nowrap;
+  }
+}
+
+.shadow-card {
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.08), 0 1px 2px 0 rgba(0,0,0,0.04);
+}
+.shadow-elevated {
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+}
+
+/* === Print styles for thermal (80mm) and A4 invoices === */
+@media print {
+  body { background: white; padding: 0; }
+  .no-print { display: none !important; }
+  .print-page { box-shadow: none !important; border: none !important; }
+}
+
+@media print and (max-width: 80mm) {
+  body { font-size: 12px; color: #000; }
+  .print-page { width: 80mm !important; box-shadow: none !important; border: none !important; }
+}
+
+/* === Mobile utilities (تأمين السلوك على الجوال) === */
+.safe-area-top    { padding-top: env(safe-area-inset-top); }
+.safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* شريط علوي ثابت على الموبايل — المحتوى يأخذ تحته padding لتفادي الاختفاء */
+@layer utilities {
+  /* Re-enable Tailwind animations via @theme tokens */
+  .animate-slide-in { animation: var(--animate-slide-in); }
+  .animate-fade-in  { animation: var(--animate-fade-in); }
+  .animate-shimmer  {
+    animation: var(--animate-shimmer);
+    background: linear-gradient(90deg, #f1f1f1 0%, #e0e0e0 50%, #f1f1f1 100%);
+    background-size: 1000px 100%;
+  }
+}
+
+/* ضمان أن المودال المنبثق في الجوال ياخد العرض الكامل تقريباً */
+@media (max-width: 640px) {
+  .modal-mobile-full {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    min-height: 100vh;
+  }
+}
+
+/* منع zoom التلقائي على iOS عند لمس input */
+@supports (-webkit-touch-callout: none) {
+  input, select, textarea { font-size: 16px !important; }
+}

@@ -1,0 +1,139 @@
+# TestSprite Code Summary — elnazlawy-system
+# Generated from codebase scan
+
+project_name: elnazlawy-system
+description: "نظام محاسبي لإدارة معرض أثاث (النزلاوي) — مبيعات/مشتريات/مخزون/خزائن/عملاء/موردين"
+
+tech_stack:
+  language: typescript
+  framework: nextjs
+  nextjs_version: "15"
+  react_version: "19.2.4"
+  runtime: nodejs
+  orm: prisma
+  database: postgresql
+  styling: tailwindcss
+  state_management: zustand
+  auth: cookie-based JWT (jose)
+  charts: recharts
+
+features:
+  - authentication:
+      - تسجيل دخول بـ username/password
+      - JWT cookie + bcrypt للباسورد
+      - أدوار: admin | manager | accountant | rep
+      - صلاحيات per-role (canSeeCost, canSeeModule)
+  - dashboard:
+      - KPIs (مبيعات اليوم/الشهر، صافي ربح، ديون العملاء/الموردين)
+      - low stock alerts
+      - pending checks + unpaid invoices
+  - sales_invoices:
+      - إنشاء فاتورة بيع مع عناصر متعددة
+      - خصم مخزون تلقائي عند الإتمام
+      - حساب صافي الربح من آخر سعر شراء
+      - أنواع: عادية | ضريبية | عرض سعر
+      - حالات: قيد التنفيذ | مكتملة | ملغاة
+  - purchase_invoices:
+      - فاتورة شراء مع عناصر
+      - تحديث آخر سعر شراء للصنف
+  - customers:
+      - CRUD + رصيد افتتاحي
+      - route_days (أيام خط السير)
+      - كشف حساب + فواتير + مدفوعات
+      - منع الحذف لو في حركات
+  - suppliers:
+      - CRUD + رصيد افتتاحي
+      - مدفوعات + شيكات
+  - products:
+      - CRUD + barcode
+      - units_per_carton
+      - last_purchase_price (مخفي لغير المخولين)
+      - reorder_level
+  - inventory:
+      - مخزون لكل صنف في كل مخزن
+      - low stock filter
+      - stock transfers بين المخازن
+  - treasury:
+      - خزائن متعددة (رئيسية | عهدة عربية | إدارة)
+      - حركات الخزينة (in/out/transfer)
+      - ربط بكل المدفوعات والمصروفات
+  - payments:
+      - تحصيلات من العملاء (transactional)
+      - مدفوعات للموردين
+      - rate limiting للمدفوعات
+  - checks:
+      - شيكات واردة/صادرة
+      - حالات: تحت التحصيل | تم الصرف | مرفوض | مُلغى
+  - expenses:
+      - مصروفات بتصنيفات
+  - reports:
+      - profit-loss
+      - statements
+      - date filter
+  - audit_log:
+      - تسجيل عمليات الحذف الحساسة
+
+pages:
+  public:
+    - /login
+    - /api/health
+  auth_required:
+    - /dashboard
+    - /customers (+ /customers/[id])
+    - /suppliers (+ /suppliers/[id])
+    - /products
+    - /sales (+ /sales/new)
+    - /purchases (+ /purchases/new)
+    - /inventory (+ /inventory/transfers)
+    - /treasury (+ /treasury/customer-payments, /treasury/supplier-payments)
+    - /expenses
+    - /reports (+ /reports/profit-loss, /reports/statements)
+    - /collections
+    - /route
+    - /my-inventory
+    - /my-sales
+    - /profile
+    - /admin/users
+    - /admin/routes
+    - /admin/stores
+    - /print/invoice/[id]
+
+api_endpoints:
+  - /api/auth/login (POST)
+  - /api/auth/logout (POST)
+  - /api/auth/user (GET)
+  - /api/auth/change-password (POST)
+  - /api/customers (GET, POST)
+  - /api/customers/[id] (GET, PATCH, DELETE)
+  - /api/suppliers (GET, POST)
+  - /api/suppliers/[id] (GET, PATCH, DELETE)
+  - /api/products (GET, POST)
+  - /api/products/[id] (PATCH, DELETE)
+  - /api/sales/invoices (GET, POST)
+  - /api/sales/invoices/[id] (GET, PATCH, DELETE)
+  - /api/purchases/invoices (GET, POST)
+  - /api/purchases/invoices/[id] (GET, PATCH, DELETE)
+  - /api/payments/customers (GET, POST)
+  - /api/payments/customers/[id] (GET, PATCH, DELETE)
+  - /api/payments/suppliers (GET, POST)
+  - /api/payments/suppliers/[id] (GET, PATCH, DELETE)
+  - /api/inventory (GET)
+  - /api/inventory/summary (GET)
+  - /api/transfers (GET, POST)
+  - /api/transfers/[id] (DELETE)
+  - /api/treasury (GET, POST)
+  - /api/treasury/[id] (PATCH, DELETE)
+  - /api/treasury/transfers (POST)
+  - /api/checks (GET, POST)
+  - /api/expenses (GET, POST)
+  - /api/expenses/[id] (PATCH, DELETE)
+  - /api/stores (GET, POST)
+  - /api/users (GET, POST)
+  - /api/users/[id] (PATCH, DELETE)
+  - /api/health (GET)
+
+notes:
+  - التطبيق كامل client-side مع API routes في Next.js
+  - كل الـ APIs تتطلب auth cookie إلا login و health
+  - Decimal fields تستخدم Decimal(15,2) في PostgreSQL
+  - التطبيق يدعم RTL (عربي)
