@@ -44,7 +44,7 @@ async function main() {
   // === Users ===
   console.log('👥 Creating default users...');
   const userDefinitions = [
-    { username: 'admin',     full_name: 'صلاح إبراهيم زيدان', phone: '01000000000', role: 'admin',   can_see_cost: true },
+    { username: 'admin',     full_name: 'إبراهيم الذيداني', phone: '01002082609', role: 'admin',   can_see_cost: true },
     { username: 'openapps',  full_name: 'الدعم الفني OPEN APPS', phone: '01558282760', role: 'admin',   can_see_cost: true },
   ];
 
