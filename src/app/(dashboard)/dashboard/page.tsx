@@ -22,13 +22,9 @@ export default async function DashboardPage() {
     lowStockCount,
     todaySalesAgg,
     monthSalesAgg,
-    openInvoices,
-    pendingChecks,
     totalCustomersDebt,
     totalSuppliersDebt,
     totalInventoryValue,
-    unpaidSalesAgg,
-    unpaidPurchasesAgg,
   ] = await Promise.all([
     prisma.products.count({ where: { is_active: true } }),
     prisma.customers.count({ where: { is_active: true } }),
@@ -49,8 +45,6 @@ export default async function DashboardPage() {
       _sum: { total: true, net_profit: true },
       _count: true,
     }),
-    prisma.sales_invoices.count({ where: { status: 'قيد التنفيذ' } }),
-    prisma.checks.count({ where: { status: 'تحت التحصيل' } }),
     // ديون العملاء
     prisma.customers.aggregate({
       where: { is_active: true, balance: { gt: 0 } },
@@ -69,22 +63,10 @@ export default async function DashboardPage() {
           WHERE p.is_active = true AND i.current_stock > 0
         `.then(r => Number(r[0]?.total || 0))
       : Promise.resolve(0),
-    // فواتير بيع غير محصلة
-    prisma.sales_invoices.aggregate({
-      where: { status: 'مكتملة', invoice_type: { not: 'عرض سعر' } },
-      _sum: { total: true, paid_amount: true },
-    }),
-    // فواتير شراء غير مسددة
-    prisma.purchase_invoices.aggregate({
-      where: { status: 'مكتملة' },
-      _sum: { total_amount: true, paid_amount: true },
-    }),
   ]);
 
   const showCost = canSeeCost(profile);
   const lowStock = Number(lowStockCount[0]?.count || 0);
-  const pendingSalesAmount = Number(unpaidSalesAgg._sum.total || 0) - Number(unpaidSalesAgg._sum.paid_amount || 0);
-  const pendingPurchasesAmount = Number(unpaidPurchasesAgg._sum.total_amount || 0) - Number(unpaidPurchasesAgg._sum.paid_amount || 0);
 
   return (
     <div className="space-y-6">
@@ -107,13 +89,13 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* KPIs — sales */}
+      {/* Row 1 — Sales & Stock Financials */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard
           iconKey="sales"
           label="مبيعات اليوم"
           value={Number(todaySalesAgg._sum.total || 0)}
-          subValue={`${todaySalesAgg._count} فاتورة`}
+          subValue={`${todaySalesAgg._count} فاتورة مكتملة`}
           color="green"
           isCurrency={true}
         />
@@ -121,7 +103,7 @@ export default async function DashboardPage() {
           iconKey="calendar"
           label="مبيعات الشهر"
           value={Number(monthSalesAgg._sum.total || 0)}
-          subValue={`${monthSalesAgg._count} فاتورة`}
+          subValue={`${monthSalesAgg._count} فاتورة مكتملة`}
           color="blue"
           isCurrency={true}
         />
@@ -135,40 +117,6 @@ export default async function DashboardPage() {
             isCurrency={true}
           />
         )}
-        <KpiCard
-          iconKey="folder"
-          label="فواتير مفتوحة"
-          value={openInvoices}
-          subValue="قيد التنفيذ"
-          color="purple"
-        />
-      </div>
-
-      {/* KPIs — money & debt */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard
-          iconKey="debt"
-          label="ديون العملاء"
-          value={Number(totalCustomersDebt._sum.balance || 0)}
-          subValue="مستحقة لك في السوق"
-          color="red"
-          isCurrency={true}
-        />
-        <KpiCard
-          iconKey="bank"
-          label="ديون الموردين"
-          value={Number(totalSuppliersDebt._sum.balance || 0)}
-          subValue="عليك للموردين"
-          color="yellow"
-          isCurrency={true}
-        />
-        <KpiCard
-          iconKey="check"
-          label="شيكات معلقة"
-          value={pendingChecks}
-          subValue="تحت التحصيل"
-          color="purple"
-        />
         {showCost && (
           <KpiCard
             iconKey="package"
@@ -181,41 +129,27 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* KPIs — المعلقات */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Row 2 — Debts & Balances */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <KpiCard
-          iconKey="clock"
-          label="فواتير لم تُحصّل"
-          value={pendingSalesAmount}
-          subValue="مكتملة ورصيد متبقي"
+          iconKey="debt"
+          label="ديون العملاء (اللي ليا في السوق)"
+          value={Number(totalCustomersDebt._sum.balance || 0)}
+          subValue="مستحقة لك طرف العملاء"
           color="red"
           isCurrency={true}
         />
         <KpiCard
-          iconKey="list"
-          label="مشتريات لم تُسدّد"
-          value={pendingPurchasesAmount}
-          subValue="مكتملة ورصيد متبقي"
+          iconKey="bank"
+          label="ديون الموردين (اللي عليا للموردين)"
+          value={Number(totalSuppliersDebt._sum.balance || 0)}
+          subValue="مستحقة للموردين عليك"
           color="yellow"
           isCurrency={true}
         />
-        <KpiCard
-          iconKey="chart"
-          label="إجمالي المنتجات"
-          value={totalProducts}
-          subValue={`في ${totalStores} مخازن`}
-          color="blue"
-        />
-        <KpiCard
-          iconKey="users"
-          label="إجمالي العملاء"
-          value={totalCustomers}
-          subValue={`+ ${totalSuppliers} موردين`}
-          color="green"
-        />
       </div>
 
-      {/* System stats */}
+      {/* Row 3 — System Statistics Counts */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 pt-2">
         <SmallStat iconKey="tags" label="المنتجات" value={totalProducts} />
         <SmallStat iconKey="users" label="العملاء" value={totalCustomers} />

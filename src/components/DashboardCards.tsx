@@ -84,7 +84,6 @@ export function KpiCard({
       </div>
       <div className="text-[10px] text-slate-500 font-medium mt-3 border-t border-black/5 pt-2 flex items-center justify-between">
         <span>{subValue}</span>
-        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60 animate-ping" />
       </div>
     </div>
   );
