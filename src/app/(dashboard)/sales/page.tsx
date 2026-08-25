@@ -167,6 +167,10 @@ function SalesTab({ isAdmin }: { isAdmin: boolean }) {
                     <span>🖨️</span>
                     <span>طباعة</span>
                   </button>
+                  <button onClick={() => window.open(`/print/invoice/${inv.id}?download_image=1`, "_blank")} className="flex-1 text-xs px-2 py-1.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-medium flex items-center justify-center gap-1">
+                    <span>🖼️</span>
+                    <span>صورة</span>
+                  </button>
                   {inv.customer && inv.status !== 'ملغاة' && (
                     <button onClick={() => setPaymentInvoice(inv)} className="flex-1 text-xs px-2 py-1.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-300 font-bold flex items-center justify-center gap-1">
                       <span>💳</span>
@@ -207,6 +211,10 @@ function SalesTab({ isAdmin }: { isAdmin: boolean }) {
                         <button onClick={() => window.open(`/print/invoice/${inv.id}?autoprint=1`, "_blank")} className="text-xs px-2.5 py-1 rounded bg-nazlawy-50 text-nazlawy-700 hover:bg-nazlawy-100 border border-nazlawy-200 font-medium flex items-center gap-1" title="طباعة الفاتورة">
                           <span>🖨️</span>
                           <span>طباعة</span>
+                        </button>
+                        <button onClick={() => window.open(`/print/invoice/${inv.id}?download_image=1`, "_blank")} className="text-xs px-2.5 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-medium flex items-center gap-1" title="تحميل صورة الفاتورة للواتساب">
+                          <span>🖼️</span>
+                          <span>صورة</span>
                         </button>
                         {inv.customer && inv.status !== 'ملغاة' && (
                           <button onClick={() => setPaymentInvoice(inv)} className="text-xs px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-300 font-bold flex items-center gap-1 shadow-sm" title="تسجيل تحصيل لهذه الفاتورة">
@@ -679,6 +687,10 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, onClose, onChanged }
 
         <div className="flex flex-wrap gap-2 pt-3 border-t">
           <button onClick={() => window.open(`/print/invoice/${invoiceId}?autoprint=1`, "_blank")} className="btn-secondary text-sm">🖨️ طباعة</button>
+          <button onClick={() => window.open(`/print/invoice/${invoiceId}?download_image=1`, "_blank")} className="btn-secondary text-sm flex items-center gap-1">
+            <span>🖼️</span>
+            <span>صورة للواتساب</span>
+          </button>
           {invData.customer_id && (
             <button
               onClick={() => setShowPaymentModal(true)}

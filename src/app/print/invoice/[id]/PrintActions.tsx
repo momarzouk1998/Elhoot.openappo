@@ -7,6 +7,7 @@ import CustomerPaymentModal from "@/components/CustomerPaymentModal";
 
 export default function PrintActions({
   autoprint,
+  downloadImage = false,
   backLink = "/sales",
   backLabel = "↩️ عودة",
   fileName = "فاتورة شركة الحوت",
@@ -17,6 +18,7 @@ export default function PrintActions({
   isCancelled,
 }: {
   autoprint?: boolean;
+  downloadImage?: boolean;
   backLink?: string;
   backLabel?: string;
   fileName?: string;
@@ -34,6 +36,28 @@ export default function PrintActions({
       return () => clearTimeout(t);
     }
   }, [autoprint]);
+
+  useEffect(() => {
+    if (downloadImage) {
+      const triggerDownload = async () => {
+        // Wait for rendering to complete
+        await new Promise(resolve => setTimeout(resolve, 800));
+        const downloadBtn = document.querySelector("button[title*='حفظ الفاتورة كصورة']") as HTMLButtonElement | null;
+        if (downloadBtn) {
+          downloadBtn.click();
+          // Wait for file conversion and click to download, then close tab
+          setTimeout(() => {
+            try {
+              window.close();
+            } catch (err) {
+              console.warn(err);
+            }
+          }, 3500);
+        }
+      };
+      triggerDownload();
+    }
+  }, [downloadImage]);
 
   function handleClose() {
     try {

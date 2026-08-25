@@ -21,7 +21,6 @@ interface Payment {
 const TABS = [
   { key: 'customers', label: 'العملاء', icon: '👥' },
   { key: 'collections', label: 'التحصيلات', icon: '💰' },
-  { key: 'route', label: 'خط السير', icon: '🗺️' },
 ] as const;
 type TabKey = typeof TABS[number]['key'];
 
@@ -239,18 +238,7 @@ function CustomerForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =
             <div>• <strong>صفر</strong>: حساب جديد لا يوجد عليه رصيد سابق.</div>
           </div>
         </div>
-        <div>
-          <label className="text-sm font-medium block mb-2">🗓️ أيام خط السير</label>
-          <div className="flex flex-wrap gap-2">
-            {DAYS.map(day => (
-              <button key={day} type="button" onClick={() => toggleDay(day)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${f.route_days.includes(day) ? 'bg-nazlawy-500 text-white border-nazlawy-500' : 'bg-white text-gray-600 border-gray-300 hover:border-nazlawy-400'}`}>
-                {day}
-              </button>
-            ))}
-          </div>
-          {f.route_days.length > 0 && <p className="text-xs text-nazlawy-600 mt-1">✓ {f.route_days.length} يوم محدد</p>}
-        </div>
+
         <div><label className="text-sm font-medium block mb-1">ملاحظات</label><textarea className="input-field" rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></div>
         <div className="flex gap-2 pt-3"><button onClick={save} disabled={loading || !f.name} className="btn-primary flex-1">{loading ? 'جاري الحفظ...' : 'حفظ'}</button><button onClick={onClose} className="btn-secondary">إلغاء</button></div>
       </div>

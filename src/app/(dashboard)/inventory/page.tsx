@@ -48,7 +48,9 @@ export default function InventoryPage() {
   useEffect(() => { getCurrentUserClient().then(setProfile); }, []);
 
   // لا حاجة لتبويب الفروع بعد الآن، تم دمجه في كاردات المخزون
-  const visibleTabs = TABS;
+  const visibleTabs = profile?.username === 'admin'
+    ? TABS.filter(t => t.key !== 'stores' && t.key !== 'transfers')
+    : TABS;
 
   return (
     <div className="space-y-4">
@@ -80,9 +82,9 @@ export default function InventoryPage() {
       </div>
 
       {tab === 'stock' && <StockTab profile={profile} />}
-      {tab === 'stores' && <StoresTab profile={profile} />}
+      {tab === 'stores' && visibleTabs.some(t => t.key === 'stores') && <StoresTab profile={profile} />}
       {tab === 'adjustments' && <AdjustmentsTab profile={profile} />}
-      {tab === 'transfers' && <TransfersTab />}
+      {tab === 'transfers' && visibleTabs.some(t => t.key === 'transfers') && <TransfersTab />}
     </div>
   );
 }

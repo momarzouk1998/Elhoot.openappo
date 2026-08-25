@@ -140,30 +140,8 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Row 2 — Inventory & What You Own (Working Capital) */}
-      {showCost && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <KpiCard
-            iconKey="package"
-            label="قيمة المخزون (رأس المال في البضاعة)"
-            value={inventoryVal}
-            subValue="مجموع قيمة بضاعتك بآخر سعر شراء"
-            color="blue"
-            isCurrency={true}
-          />
-          <KpiCard
-            iconKey="own"
-            label="ما تملكه فعلياً (صافي رأس المال)"
-            value={whatYouOwn}
-            subValue="المعادلة: قيمة المخزون + ديون العملاء + رصيد الخزائن - ديون الموردين"
-            color="green"
-            isCurrency={true}
-          />
-        </div>
-      )}
-
-      {/* Row 3 — Debts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Row 2 — Debts & Inventory */}
+      <div className={`grid grid-cols-1 ${showCost ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
         <KpiCard
           iconKey="debt"
           label="ديون العملاء (اللي ليا في السوق)"
@@ -180,7 +158,31 @@ export default async function DashboardPage() {
           color="yellow"
           isCurrency={true}
         />
+        {showCost && (
+          <KpiCard
+            iconKey="package"
+            label="قيمة المخزون (رأس المال في البضاعة)"
+            value={inventoryVal}
+            subValue="مجموع قيمة بضاعتك بآخر سعر شراء"
+            color="blue"
+            isCurrency={true}
+          />
+        )}
       </div>
+
+      {/* Row 3 — What You Own (صافي رأس المال) - Last Card */}
+      {showCost && (
+        <div className="grid grid-cols-1 gap-4">
+          <KpiCard
+            iconKey="own"
+            label="ما تملكه فعلياً (صافي رأس المال)"
+            value={whatYouOwn}
+            subValue="المعادلة: قيمة المخزون + ديون العملاء + رصيد الخزائن - ديون الموردين"
+            color="green"
+            isCurrency={true}
+          />
+        </div>
+      )}
 
       {/* Row 4 — System Statistics Counts */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 pt-2">

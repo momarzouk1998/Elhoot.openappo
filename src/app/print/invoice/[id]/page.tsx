@@ -31,11 +31,12 @@ export default async function InvoicePrintPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ autoprint?: string }>;
+  searchParams: Promise<{ autoprint?: string; download_image?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
   const autoprint = sp.autoprint === '1';
+  const downloadImage = sp.download_image === '1';
 
   const invoice = await prisma.sales_invoices.findUnique({
     where: { id },
@@ -462,6 +463,7 @@ export default async function InvoicePrintPage({
 
       <PrintActions
         autoprint={autoprint}
+        downloadImage={downloadImage}
         fileName={`فاتورة شركة الحوت - ${invoice.invoice_number}`}
         targetId="statement"
         invoiceId={invoice.id}

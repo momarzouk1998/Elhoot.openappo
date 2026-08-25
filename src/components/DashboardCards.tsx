@@ -22,6 +22,7 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   tags: Lucide.Tags,
   building: Lucide.Building,
   alert: Lucide.AlertTriangle,
+  own: Lucide.Wallet,
 };
 
 export function KpiCard({

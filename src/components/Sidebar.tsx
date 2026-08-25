@@ -145,7 +145,10 @@ export default function Sidebar({ profile }: { profile: CurrentProfile }) {
     touchCurrentX.current = null;
   };
 
-  const visible = ALL_MODULES.filter(m => canSeeModule(profile, m.key));
+  const visible = ALL_MODULES.filter(m => {
+    if (profile.username === 'admin' && m.key === 'users') return false;
+    return canSeeModule(profile, m.key);
+  });
 
   return (
     <>

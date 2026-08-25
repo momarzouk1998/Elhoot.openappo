@@ -275,12 +275,12 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       {/* الأرصدة الإجمالية */}
       <div>
         <h2 className="text-lg font-bold text-slate-700 mb-3">💳 الأرصدة الحالية (لقطة الآن)</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <StatCard
             icon="👥"
             label="ديون العملاء"
             value={formatEGP(totalCustomerDebt)}
-            subValue="علينا (لهم)"
+            subValue="مستحقة لك طرف العملاء"
             color="border-red-300 bg-gradient-to-br from-red-50 to-white"
             textColor="text-red-700"
           />
@@ -288,25 +288,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
             icon="🏭"
             label="ديون الموردين"
             value={formatEGP(totalSupplierDebt)}
-            subValue="لنا (علينا)"
+            subValue="مستحقة للموردين عليك"
             color="border-yellow-300 bg-gradient-to-br from-yellow-50 to-white"
             textColor="text-yellow-700"
-          />
-          <StatCard
-            icon="🧾"
-            label="فواتير بيع لم تُحصّل"
-            value={formatEGP(pendingSalesAmount)}
-            subValue="مكتملة ورصيدها متبقي"
-            color="border-amber-300 bg-gradient-to-br from-amber-50 to-white"
-            textColor="text-amber-700"
-          />
-          <StatCard
-            icon="📋"
-            label="فواتير شراء لم تُسدّد"
-            value={formatEGP(pendingPurchasesAmount)}
-            subValue="مكتملة ورصيدها متبقي"
-            color="border-pink-300 bg-gradient-to-br from-pink-50 to-white"
-            textColor="text-pink-700"
           />
         </div>
       </div>
