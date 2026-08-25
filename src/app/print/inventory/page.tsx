@@ -5,8 +5,8 @@ import PrintActions from '@/app/print/invoice/[id]/PrintActions';
 export const dynamic = 'force-dynamic';
 
 const C = {
-  orange: '#f7941d',
-  darkOrange: '#d97706',
+  orange: '#0284c7',
+  darkOrange: '#0369a1',
   gray: '#002b61',
   text: '#343a40',
   lightBg: '#f8f9fa',
@@ -112,7 +112,7 @@ export default async function PrintInventoryReportPage() {
       }}>
         {/* Header Banner */}
         <div style={{
-          background: `linear-gradient(135deg, ${C.orange}, ${C.darkOrange})`,
+          background: `linear-gradient(135deg, #002b61, #0284c7)`,
           color: C.white,
           padding: '1.5rem 2rem',
           display: 'flex',
@@ -280,14 +280,14 @@ export default async function PrintInventoryReportPage() {
 
         {/* Master Grand Total Summary Footer */}
         <div style={{
-          backgroundColor: `linear-gradient(135deg, ${C.orange}, ${C.darkOrange})`,
-          background: `linear-gradient(135deg, ${C.orange}, ${C.darkOrange})`,
+          backgroundColor: `linear-gradient(135deg, #002b61, #0284c7)`,
+          background: `linear-gradient(135deg, #002b61, #0284c7)`,
           color: C.white,
           padding: '1.5rem',
           margin: '0 1.5rem 1.5rem',
           borderRadius: '10px',
           textAlign: 'center',
-          boxShadow: '0 4px 15px rgba(245, 98, 38, 0.3)',
+          boxShadow: '0 4px 15px rgba(2, 132, 199, 0.25)',
         }}>
           <div style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.5rem' }}>
             🏆 الإجمالي العام لجميع المخازن والحسابات

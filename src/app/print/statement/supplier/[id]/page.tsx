@@ -7,8 +7,8 @@ import { LOGO_BASE64 } from '@/lib/logo-base64';
 export const dynamic = 'force-dynamic';
 
 const C = {
-  orange: '#f7941d',
-  darkOrange: '#d97706',
+  orange: '#0284c7',
+  darkOrange: '#0369a1',
   gray: '#002b61',
   darkGray: '#001a3a',
   text: '#343a40',
@@ -201,9 +201,9 @@ export default async function SupplierStatementPage({ params }: { params: Promis
 
           <div style={{ textAlign: 'left' }}>
             <div style={{
-              display: 'inline-block', background: `linear-gradient(90deg, ${C.gray} 0%, ${C.orange} 100%)`,
+              display: 'inline-block', background: `linear-gradient(90deg, #001a3a 0%, #0284c7 100%)`,
               color: C.white, padding: '5px 18px', borderRadius: '20px',
-              fontSize: '0.85rem', fontWeight: 800, boxShadow: '0 2px 6px rgba(245,98,38,0.25)',
+              fontSize: '0.85rem', fontWeight: 800, boxShadow: '0 2px 6px rgba(2, 132, 199, 0.25)',
             }}>
               كشف حساب مورد
             </div>
@@ -295,7 +295,7 @@ export default async function SupplierStatementPage({ params }: { params: Promis
               })}
             </tbody>
             <tfoot>
-              <tr style={{ backgroundColor: C.orange, color: C.white, fontWeight: 700 }}>
+              <tr style={{ backgroundColor: C.gray, color: C.white, fontWeight: 700 }}>
                 <td colSpan={3} style={{ padding: '10px', border: `1px solid ${C.border}`, textAlign: 'center' }}>الإجماليات</td>
                 <td style={{ padding: '10px', textAlign: 'center', border: `1px solid ${C.border}` }}>{n(totalDebit)}</td>
                 <td style={{ padding: '10px', textAlign: 'center', border: `1px solid ${C.border}` }}>{n(totalCredit)}</td>
@@ -322,9 +322,9 @@ export default async function SupplierStatementPage({ params }: { params: Promis
 
           {/* Balance summary */}
           <div style={{
-            background: `linear-gradient(135deg, ${C.orange}, ${C.darkOrange})`,
+            background: `linear-gradient(135deg, #002b61, #0284c7)`,
             color: C.white, borderRadius: '12px', padding: '1.5rem', textAlign: 'center',
-            boxShadow: '0 6px 20px rgba(245, 98, 38, 0.3)',
+            boxShadow: '0 6px 20px rgba(2, 132, 199, 0.25)',
           }}>
             <div style={{ fontSize: '1rem', opacity: 0.9, marginBottom: '0.4rem' }}>المتبقي للمورد</div>
             <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1.2, marginBottom: '0.4rem' }}>
