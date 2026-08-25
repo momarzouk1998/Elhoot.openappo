@@ -589,12 +589,12 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
       const invoiceText = "مرحباً بك أستاذ " + customerName + "،\nمرفق فاتورة شركة الحوت رقم #" + invData.invoice_number + "\nالمبلغ المطلوب: " + formatEGP(currentInvoiceTotal) + " ج\nشكراً لتعاملكم معنا.";
 
       // 1. Web Share API with File (Native mobile Chrome/Safari share directly to WhatsApp)
-      if (typeof navigator !== "undefined" && navigator.canShare) {
+      if (typeof navigator !== "undefined" && typeof (navigator as any).canShare === "function") {
         try {
-          const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+          const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
           if (blob) {
-            const file = new File([blob], "فاتورة_شركة_الحوت_" + invData.invoice_number + ".png", { type: "image/png" });
-            if (navigator.canShare({ files: [file] })) {
+            const file = new File([blob as BlobPart], "فاتورة_شركة_الحوت_" + invData.invoice_number + ".png", { type: "image/png" });
+            if ((navigator as any).canShare({ files: [file] })) {
               await navigator.share({
                 files: [file],
                 title: "فاتورة شركة الحوت #" + invData.invoice_number,
@@ -746,7 +746,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
         </button>
       </div>
 
-      <div className="p-2 md:p-4 space-y-4 max-h-[85vh] overflow-y-auto">
+      <div className="p-1 sm:p-3 md:p-4 space-y-3 max-h-[85vh] overflow-y-auto">
         {editing ? (
           /* وضع التعديل (Edit Mode) */
           <div className="space-y-4 pt-6">
@@ -801,334 +801,325 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
           </div>
         ) : (
           /* العرض الرسمي المتطابق تماماً مع الفاتورة المطبوعة (Document View) */
-          <div
-            id={"invoice-sheet-" + invoiceId}
-            className="printable-invoice-modal-content"
-            style={{
-              width: '100%',
-              margin: '0 auto',
-              backgroundColor: C.white,
-              borderRadius: '12px',
-              overflow: 'hidden',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              border: '1.5px solid ' + C.borderDark,
-              direction: 'rtl',
-              textAlign: 'right',
-              color: C.text,
-              fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
-            }}
-          >
-            {/* Top Accent Line */}
-            <div style={{ height: '6px', background: 'linear-gradient(90deg, ' + C.darkNavy + ' 0%, ' + C.navy + ' 60%, ' + C.orange + ' 100%)' }} />
-
-            {/* Integrated Header */}
+          <div className="w-full overflow-x-auto pb-1">
             <div
+              id={"invoice-sheet-" + invoiceId}
+              className="printable-invoice-modal-content"
               style={{
-                padding: '1.1rem 1.25rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: '2px solid ' + C.border,
-                background: '#ffffff',
+                minWidth: '500px',
+                width: '100%',
+                margin: '0 auto',
+                backgroundColor: C.white,
+                borderRadius: '12px',
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                border: '1.5px solid ' + C.borderDark,
+                direction: 'rtl',
+                textAlign: 'right',
+                color: C.text,
+                fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div
-                  style={{
-                    width: '68px',
-                    height: '68px',
-                    backgroundColor: C.white,
-                    borderRadius: '10px',
-                    padding: '3px',
-                    border: '2px solid ' + C.orange,
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <img
-                    src="/logo.png"
-                    alt="شركة الحوت"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                  />
-                </div>
-                <div>
-                  <div style={{ fontSize: '1.45rem', fontWeight: 900, color: C.darkNavy, lineHeight: 1.15 }}>
-                    شركة الحوت
-                  </div>
-                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: C.orange, marginTop: '3px' }}>
-                    للأدوات واللوحات الكهربائية
-                  </div>
-                  <div style={{ fontSize: '0.78rem', color: C.muted, marginTop: '2px' }}>
-                    تجارة وتوزيع الجملة
-                  </div>
-                </div>
-              </div>
+              {/* Top Accent Line */}
+              <div style={{ height: '6px', background: 'linear-gradient(90deg, ' + C.darkNavy + ' 0%, ' + C.navy + ' 60%, ' + C.orange + ' 100%)' }} />
 
-              <div style={{ textAlign: 'left' }}>
-                <div
-                  style={{
-                    display: 'inline-block',
-                    background: isCancelled ? C.red : C.darkNavy,
-                    color: C.white,
-                    padding: '4px 14px',
-                    borderRadius: '20px',
-                    fontSize: '0.85rem',
-                    fontWeight: 800,
-                  }}
-                >
-                  {isCancelled ? 'فاتورة ملغاة 🚫' : ('فاتورة ' + invData.invoice_type)}
-                </div>
-                <div style={{ fontSize: '0.85rem', marginTop: '6px', color: C.text }}>
-                  <span style={{ color: C.muted }}>رقم الفاتورة: </span>
-                  <strong style={{ fontFamily: 'monospace', fontSize: '1rem', color: C.darkNavy }}>#{invData.invoice_number}</strong>
-                </div>
-                <div style={{ fontSize: '0.8rem', marginTop: '2px', color: C.muted }}>
-                  <span>التاريخ: </span>
-                  <strong style={{ color: C.text }}>{formatDate(invData.invoice_date)}</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Customer & Warehouse Info Bar */}
-            <div
-              style={{
-                backgroundColor: '#f1f5f9',
-                borderBottom: '2px solid ' + C.border,
-                padding: '0.65rem 1.25rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontSize: '0.9rem',
-              }}
-            >
-              {invData.customer ? (
-                <div>
-                  <span style={{ color: C.muted }}>العميل: </span>
-                  <strong style={{ fontSize: '1.05rem', color: C.darkNavy, fontWeight: 900 }}>{invData.customer.name}</strong>
-                  {invData.customer.phone && (
-                    <span style={{ color: C.muted, marginRight: '10px', fontSize: '0.85rem' }}>📞 {invData.customer.phone}</span>
-                  )}
-                </div>
-              ) : (
-                <div>
-                  <span style={{ color: C.muted }}>العميل: </span>
-                  <strong style={{ fontSize: '1rem', color: C.darkNavy }}>عميل نقدي</strong>
-                </div>
-              )}
-
-              {invData.store && (
-                <div style={{ color: C.muted, fontSize: '0.85rem' }}>
-                  <span>المخزن: </span>
-                  <strong style={{ color: C.text }}>{invData.store.name}</strong>
-                </div>
-              )}
-            </div>
-
-            {/* Items Table */}
-            <table style={{ width: '100%', fontSize: '0.92rem', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ backgroundColor: C.tableHeader, color: C.white, borderBottom: '2px solid ' + C.orange }}>
-                  <th style={{ padding: '8px 10px', textAlign: 'center', width: '36px', fontSize: '0.85rem' }}>م</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right', fontSize: '0.9rem' }}>الصنف والبيان</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center', width: '55px', fontSize: '0.85rem' }}>الكمية</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'left', width: '85px', fontSize: '0.85rem' }}>السعر</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'left', width: '100px', fontSize: '0.85rem' }}>الإجمالي</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayItems.map((it: any, i: number) => (
-                  <tr
-                    key={it.id || i}
+              {/* Integrated Header */}
+              <div
+                style={{
+                  padding: '0.9rem 1.1rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  borderBottom: '2px solid ' + C.border,
+                  background: '#ffffff',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div
                     style={{
-                      backgroundColor: i % 2 === 0 ? C.rowAlt : C.white,
-                      borderBottom: '1px solid #e2e8f0',
+                      width: '60px',
+                      height: '60px',
+                      backgroundColor: C.white,
+                      borderRadius: '10px',
+                      padding: '3px',
+                      border: '2px solid ' + C.orange,
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    <td style={{ padding: '8px 10px', textAlign: 'center', color: C.muted, fontWeight: 700 }}>{i + 1}</td>
-                    <td style={{ padding: '8px 10px', fontWeight: 800, color: C.text, fontSize: '0.95rem' }}>{it.product_name}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 900, fontSize: '1rem', color: C.darkNavy }}>
-                      {Number(it.quantity)}
-                    </td>
-                    <td style={{ padding: '8px 10px', textAlign: 'left', fontFamily: 'monospace', fontWeight: 700, fontSize: '0.95rem' }}>
-                      {formatEGP(Number(it.unit_price))}
-                    </td>
-                    <td style={{ padding: '8px 10px', textAlign: 'left', fontFamily: 'monospace', fontWeight: 900, fontSize: '1.05rem', color: C.navy }}>
-                      {formatEGP(Number(it.line_total || (Number(it.quantity) * Number(it.unit_price))))}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    <img
+                      src="/logo.png"
+                      alt="شركة الحوت"
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '1.35rem', fontWeight: 900, color: C.darkNavy, lineHeight: 1.15 }}>
+                      شركة الحوت
+                    </div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: C.orange, marginTop: '2px' }}>
+                      للأدوات واللوحات الكهربائية
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: C.muted, marginTop: '2px' }}>
+                      تجارة وتوزيع الجملة
+                    </div>
+                  </div>
+                </div>
 
-            {/* Financial Summary & Totals */}
-            <div
-              style={{
-                padding: '0.75rem 1.25rem',
-                borderTop: '2px solid ' + C.navy,
-                backgroundColor: '#ffffff',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', marginBottom: '4px' }}>
-                <span style={{ color: C.muted, fontWeight: 600 }}>الإجمالي قبل الخصم:</span>
-                <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '1rem' }}>
-                  {formatEGP(Number(invData.subtotal || subtotal))} ج
-                </span>
+                <div style={{ textAlign: 'left' }}>
+                  <div
+                    style={{
+                      display: 'inline-block',
+                      background: isCancelled ? C.red : C.darkNavy,
+                      color: C.white,
+                      padding: '3px 12px',
+                      borderRadius: '20px',
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                    }}
+                  >
+                    {isCancelled ? 'فاتورة ملغاة 🚫' : ('فاتورة ' + invData.invoice_type)}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', marginTop: '4px', color: C.text }}>
+                    <span style={{ color: C.muted }}>رقم الفاتورة: </span>
+                    <strong style={{ fontFamily: 'monospace', fontSize: '0.95rem', color: C.darkNavy }}>#{invData.invoice_number}</strong>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', marginTop: '2px', color: C.muted }}>
+                    <span>التاريخ: </span>
+                    <strong style={{ color: C.text }}>{formatDate(invData.invoice_date)}</strong>
+                  </div>
+                </div>
               </div>
 
-              {Number(invData.discount || discount) > 0 && (
+              {/* Customer & Warehouse Info Bar */}
+              <div
+                style={{
+                  backgroundColor: '#f1f5f9',
+                  borderBottom: '2px solid ' + C.border,
+                  padding: '0.55rem 1.1rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: '0.88rem',
+                }}
+              >
+                {invData.customer ? (
+                  <div>
+                    <span style={{ color: C.muted }}>العميل: </span>
+                    <strong style={{ fontSize: '1rem', color: C.darkNavy, fontWeight: 900 }}>{invData.customer.name}</strong>
+                    {invData.customer.phone && (
+                      <span style={{ color: C.muted, marginRight: '10px', fontSize: '0.82rem' }}>📞 {invData.customer.phone}</span>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <span style={{ color: C.muted }}>العميل: </span>
+                    <strong style={{ fontSize: '0.95rem', color: C.darkNavy }}>عميل نقدي</strong>
+                  </div>
+                )}
+
+                {invData.store && (
+                  <div style={{ color: C.muted, fontSize: '0.82rem' }}>
+                    <span>المخزن: </span>
+                    <strong style={{ color: C.text }}>{invData.store.name}</strong>
+                  </div>
+                )}
+              </div>
+
+              {/* Items Table */}
+              <table style={{ width: '100%', fontSize: '0.88rem', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ backgroundColor: C.tableHeader, color: C.white, borderBottom: '2px solid ' + C.orange }}>
+                    <th style={{ padding: '7px 8px', textAlign: 'center', width: '32px', fontSize: '0.8rem' }}>م</th>
+                    <th style={{ padding: '7px 8px', textAlign: 'right', fontSize: '0.85rem' }}>الصنف والبيان</th>
+                    <th style={{ padding: '7px 8px', textAlign: 'center', width: '50px', fontSize: '0.8rem' }}>الكمية</th>
+                    <th style={{ padding: '7px 8px', textAlign: 'left', width: '80px', fontSize: '0.8rem' }}>السعر</th>
+                    <th style={{ padding: '7px 8px', textAlign: 'left', width: '95px', fontSize: '0.8rem' }}>الإجمالي</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayItems.map((it: any, i: number) => (
+                    <tr
+                      key={it.id || i}
+                      style={{
+                        backgroundColor: i % 2 === 0 ? C.rowAlt : C.white,
+                        borderBottom: '1px solid #e2e8f0',
+                      }}
+                    >
+                      <td style={{ padding: '7px 8px', textAlign: 'center', color: C.muted, fontWeight: 700 }}>{i + 1}</td>
+                      <td style={{ padding: '7px 8px', fontWeight: 800, color: C.text, fontSize: '0.9rem' }}>{it.product_name}</td>
+                      <td style={{ padding: '7px 8px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 900, fontSize: '0.95rem', color: C.darkNavy }}>
+                        {Number(it.quantity)}
+                      </td>
+                      <td style={{ padding: '7px 8px', textAlign: 'left', fontFamily: 'monospace', fontWeight: 700, fontSize: '0.9rem' }}>
+                        {formatEGP(Number(it.unit_price))}
+                      </td>
+                      <td style={{ padding: '7px 8px', textAlign: 'left', fontFamily: 'monospace', fontWeight: 900, fontSize: '0.95rem', color: C.navy }}>
+                        {formatEGP(Number(it.line_total || (Number(it.quantity) * Number(it.unit_price))))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Financial Summary & Totals */}
+              <div
+                style={{
+                  padding: '0.65rem 1.1rem',
+                  borderTop: '2px solid ' + C.navy,
+                  backgroundColor: '#ffffff',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', marginBottom: '3px' }}>
+                  <span style={{ color: C.muted, fontWeight: 600 }}>الإجمالي قبل الخصم:</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                    {formatEGP(Number(invData.subtotal || subtotal))} ج
+                  </span>
+                </div>
+
+                {Number(invData.discount || discount) > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '0.85rem',
+                      color: C.yellow,
+                      backgroundColor: C.yellowBg,
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      marginBottom: '3px',
+                    }}
+                  >
+                    <span style={{ fontWeight: 700 }}>الخصم:</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                      - {formatEGP(Number(invData.discount || discount))} ج
+                    </span>
+                  </div>
+                )}
+
                 <div
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    fontSize: '0.9rem',
-                    color: C.yellow,
-                    backgroundColor: C.yellowBg,
-                    padding: '3px 10px',
-                    borderRadius: '6px',
-                    marginBottom: '4px',
+                    fontSize: '1.15rem',
+                    fontWeight: 900,
+                    borderTop: '2px dashed ' + C.border,
+                    paddingTop: '6px',
+                    color: C.darkNavy,
                   }}
                 >
-                  <span style={{ fontWeight: 700 }}>الخصم:</span>
-                  <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '1rem' }}>
-                    - {formatEGP(Number(invData.discount || discount))} ج
+                  <span style={{ whiteSpace: 'nowrap' }}>إجمالي الفاتورة:</span>
+                  <span style={{ fontFamily: 'monospace', color: C.darkNavy, fontSize: '1.25rem', whiteSpace: 'nowrap' }}>
+                    {formatEGP(Number(currentInvoiceTotal))} ج
                   </span>
+                </div>
+              </div>
+
+              {/* Customer Statement Integrated Box */}
+              {invData.customer && prevBalance !== null && newBalance !== null && (
+                <div
+                  style={{
+                    margin: '0.4rem 1.1rem 0.75rem 1.1rem',
+                    borderRadius: '10px',
+                    border: '1.5px solid ' + (isCancelled ? '#fca5a5' : C.navy),
+                    backgroundColor: isCancelled ? '#fff1f2' : '#f8fafc',
+                    overflow: 'hidden',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  }}
+                >
+                  {isCancelled && (
+                    <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '3px 8px', fontSize: '0.75rem', fontWeight: 800, textAlign: 'center', borderBottom: '1px solid #fca5a5' }}>
+                      🚫 تنبيه: هذه الفاتورة ملغاة ولا تؤثر على كشف حساب العميل
+                    </div>
+                  )}
+                  
+                  <div
+                    style={{
+                      backgroundColor: C.darkNavy,
+                      color: C.white,
+                      padding: '4px 10px',
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      textAlign: 'center',
+                    }}
+                  >
+                    📑 كشف حساب العميل مدمج بالفاتورة
+                  </div>
+
+                  <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', textAlign: 'center' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#edf2f7', color: C.text, fontWeight: 800, fontSize: '0.8rem' }}>
+                        <th style={{ padding: '6px 3px', borderBottom: '1px solid ' + C.border }}>الحساب السابق</th>
+                        {!isCancelled && <th style={{ padding: '6px 3px', borderBottom: '1px solid ' + C.border }}>+ الفاتورة الحالية</th>}
+                        {!isCancelled && paidOnDate > 0 && <th style={{ padding: '6px 3px', borderBottom: '1px solid ' + C.border, color: C.green }}>- المدفوع</th>}
+                        <th style={{ padding: '6px 3px', borderBottom: '1px solid ' + C.border, color: C.darkNavy, fontWeight: 900, backgroundColor: '#e2e8f0' }}>
+                          {isCancelled ? 'رصيد العميل' : '= المتبقي النهائي'}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '0.9rem' }}>
+                        <td style={{ padding: '7px 3px', color: prevBalance > 0.01 ? C.red : prevBalance < -0.01 ? C.green : C.muted }}>
+                          {formatEGP(prevBalance)} ج
+                        </td>
+                        {!isCancelled && (
+                          <td style={{ padding: '7px 3px', color: C.darkOrange }}>
+                            +{formatEGP(Number(currentInvoiceTotal))} ج
+                          </td>
+                        )}
+                        {!isCancelled && paidOnDate > 0 && (
+                          <td style={{ padding: '7px 3px', color: C.green }}>
+                            -{formatEGP(paidOnDate)} ج
+                          </td>
+                        )}
+                        <td style={{ padding: '7px 3px', color: newBalance > 0.01 ? C.red : newBalance < -0.01 ? C.green : C.darkNavy, backgroundColor: '#f1f5f9', fontSize: '1rem' }}>
+                          {formatEGP(newBalance)} ج
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               )}
 
+              {/* Notes */}
+              {invData.notes && (
+                <div style={{ margin: '0.4rem 1.1rem', padding: '6px 10px', backgroundColor: '#fffbeb', borderRadius: '8px', border: '1px solid #fde68a', fontSize: '0.78rem', color: '#92400e' }}>
+                  <strong>ملاحظات: </strong> {invData.notes}
+                </div>
+              )}
+
+              {/* Elegant Footer */}
               <div
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: '1.35rem',
-                  fontWeight: 900,
-                  borderTop: '2px dashed ' + C.border,
-                  paddingTop: '6px',
-                  color: C.darkNavy,
+                  backgroundColor: '#f8fafc',
+                  padding: '0.65rem 1.1rem',
+                  borderTop: '1.5px solid ' + C.border,
+                  textAlign: 'center',
+                  fontSize: '0.75rem',
+                  color: '#475569',
                 }}
               >
-                <span>إجمالي الفاتورة الحالية:</span>
-                <span style={{ fontFamily: 'monospace', color: C.darkNavy, fontSize: '1.45rem' }}>{formatEGP(Number(currentInvoiceTotal))} ج</span>
-              </div>
-            </div>
-
-            {/* Customer Statement Integrated Box */}
-            {invData.customer && prevBalance !== null && newBalance !== null && (
-              <div
-                style={{
-                  margin: '0.5rem 1.25rem 0.85rem 1.25rem',
-                  borderRadius: '10px',
-                  border: '2px solid ' + (isCancelled ? '#fca5a5' : C.navy),
-                  backgroundColor: isCancelled ? '#fff1f2' : '#f8fafc',
-                  overflow: 'hidden',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-                }}
-              >
-                {isCancelled && (
-                  <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 800, textAlign: 'center', borderBottom: '1px solid #fca5a5' }}>
-                    🚫 تنبيه: هذه الفاتورة ملغاة ولا تؤثر على كشف حساب العميل
-                  </div>
-                )}
-                
-                <div
-                  style={{
-                    backgroundColor: C.darkNavy,
-                    color: C.white,
-                    padding: '5px 12px',
-                    fontSize: '0.85rem',
-                    fontWeight: 800,
-                    textAlign: 'center',
-                  }}
-                >
-                  📑 كشف حساب العميل مدمج بالفاتورة
+                <div style={{ fontWeight: 800, color: C.darkNavy, marginBottom: '1px' }}>
+                  شركة الحوت للأدوات واللوحات الكهربائية ▪ تجارة وتوزيع الجملة
                 </div>
-
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: isCancelled ? '1fr 1fr' : paidOnDate > 0 ? '1fr 1fr 1fr 1.2fr' : '1fr 1fr 1.2fr',
-                    textAlign: 'center',
-                    borderBottom: '1px solid ' + C.border,
-                    backgroundColor: '#edf2f7',
-                    padding: '6px 0',
-                    fontWeight: 800,
-                    fontSize: '0.85rem',
-                    color: C.text,
-                  }}
-                >
-                  <div>الحساب السابق</div>
-                  {!isCancelled && <div>+ الفاتورة الحالية</div>}
-                  {!isCancelled && paidOnDate > 0 && <div style={{ color: C.green }}>- المدفوع</div>}
-                  <div style={{ color: C.darkNavy, fontWeight: 900 }}>{isCancelled ? 'رصيد العميل' : '= المتبقي النهائي'}</div>
-                </div>
-
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: isCancelled ? '1fr 1fr' : paidOnDate > 0 ? '1fr 1fr 1fr 1.2fr' : '1fr 1fr 1.2fr',
-                    textAlign: 'center',
-                    padding: '8px 0',
-                    fontFamily: 'monospace',
-                    fontWeight: 900,
-                  }}
-                >
-                  <div style={{ color: prevBalance > 0.01 ? C.red : prevBalance < -0.01 ? C.green : C.muted, fontSize: '1.05rem' }}>
-                    {formatEGP(prevBalance)} ج
-                  </div>
-                  {!isCancelled && (
-                    <div style={{ color: C.darkOrange, fontSize: '1.05rem' }}>
-                      +{formatEGP(Number(currentInvoiceTotal))} ج
-                    </div>
-                  )}
-                  {!isCancelled && paidOnDate > 0 && (
-                    <div style={{ color: C.green, fontSize: '1.05rem' }}>
-                      -{formatEGP(paidOnDate)} ج
-                    </div>
-                  )}
-                  <div style={{ color: newBalance > 0.01 ? C.red : newBalance < -0.01 ? C.green : C.darkNavy, fontSize: '1.25rem', backgroundColor: '#f1f5f9', padding: '2px 0' }}>
-                    {formatEGP(newBalance)} ج
-                  </div>
-                </div>
+                <div>شكراً لتعاملكم معنا ▪ للإدارة والاستفسارات يرجى التواصل عبر الواتساب أو الهاتف</div>
               </div>
-            )}
-
-            {/* Notes */}
-            {invData.notes && (
-              <div style={{ margin: '0.5rem 1.25rem', padding: '8px 12px', backgroundColor: '#fffbeb', borderRadius: '8px', border: '1px solid #fde68a', fontSize: '0.8rem', color: '#92400e' }}>
-                <strong>ملاحظات: </strong> {invData.notes}
-              </div>
-            )}
-
-            {/* Elegant Footer */}
-            <div
-              style={{
-                backgroundColor: '#f8fafc',
-                padding: '0.75rem 1.25rem',
-                borderTop: '1.5px solid ' + C.border,
-                textAlign: 'center',
-                fontSize: '0.8rem',
-                color: '#475569',
-              }}
-            >
-              <div style={{ fontWeight: 800, color: C.darkNavy, marginBottom: '2px' }}>
-                شركة الحوت للأدوات واللوحات الكهربائية ▪ تجارة وتوزيع الجملة
-              </div>
-              <div>شكراً لتعاملكم معنا ▪ للإدارة والاستفسارات يرجى التواصل عبر الواتساب أو الهاتف</div>
             </div>
           </div>
         )}
       </div>
 
       {/* Modal Actions Footer (no-print) */}
-      <div className="px-4 py-3 bg-slate-100 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 no-print rounded-b-2xl">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="p-3 bg-slate-100 border-t border-slate-200 no-print rounded-b-2xl">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
           {!isCancelled && !editing && (
             <button
               onClick={() => setShowPaymentModal(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="col-span-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
               title="تحصيل"
             >
               <span>💳</span>
@@ -1141,36 +1132,36 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
               <button
                 onClick={handleShareWhatsapp}
                 disabled={sharingWhatsapp}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
-                title="إرسال صورة الفاتورة مباشرة للعميل على واتساب"
+                className="col-span-1 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                title="إرسال واتساب"
               >
                 <span>{sharingWhatsapp ? "⏳" : "📲"}</span>
-                <span>{sharingWhatsapp ? "جاري التجهيز..." : "إرسال واتساب"}</span>
+                <span>{sharingWhatsapp ? "جاري..." : "واتساب"}</span>
               </button>
 
               <button
                 onClick={handleDirectDownloadImage}
                 disabled={downloadingImage}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
-                title="تحميل صورة الفاتورة"
+                className="col-span-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                title="تحميل صورة"
               >
                 <span>{downloadingImage ? "⏳" : "🖼️"}</span>
-                <span>{downloadingImage ? "جاري التجهيز..." : "صورة"}</span>
+                <span>{downloadingImage ? "جاري..." : "صورة"}</span>
               </button>
 
               <button
                 onClick={handleDirectDownloadPdf}
                 disabled={downloadingPdf}
-                className="bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="col-span-1 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
                 title="تحميل PDF"
               >
                 <span>{downloadingPdf ? "⏳" : "📄"}</span>
-                <span>{downloadingPdf ? "جاري الإنشاء..." : "PDF"}</span>
+                <span>{downloadingPdf ? "جاري..." : "PDF"}</span>
               </button>
 
               <button
                 onClick={handlePrint}
-                className="bg-slate-800 hover:bg-slate-900 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="col-span-1 bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
               >
                 <span>🖨️</span>
                 <span>طباعة</span>
@@ -1183,9 +1174,9 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
               <button
                 onClick={saveChanges}
                 disabled={saving}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                className="col-span-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
               >
-                <span>{saving ? "⏳ جاري الحفظ..." : "💾 حفظ التعديلات"}</span>
+                <span>{saving ? "⏳..." : "💾 حفظ التعديلات"}</span>
               </button>
               <button
                 onClick={() => {
@@ -1196,20 +1187,20 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
                   setInvoiceType(invData.invoice_type);
                   setNotes(invData.notes || "");
                 }}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer"
+                className="col-span-1 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center"
               >
                 إلغاء التعديل
               </button>
             </>
           )}
-        </div>
 
-        <button
-          onClick={onClose}
-          className="bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs md:text-sm font-bold px-4 py-2 rounded-xl transition-all cursor-pointer"
-        >
-          إغلاق
-        </button>
+          <button
+            onClick={onClose}
+            className="col-span-1 sm:mr-auto bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+          >
+            إغلاق
+          </button>
+        </div>
       </div>
 
       {showPaymentModal && (
