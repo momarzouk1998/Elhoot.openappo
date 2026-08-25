@@ -86,9 +86,11 @@ function SalesTab({ isAdmin }: { isAdmin: boolean }) {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [openInvoice, setOpenInvoice] = useState<Invoice | string | null>(null);
+  const [openEditMode, setOpenEditMode] = useState<boolean>(false);
   const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { mutate } = useApiMutation();
 
   const params = new URLSearchParams();
   if (type) params.set("type", type);
@@ -116,6 +118,25 @@ function SalesTab({ isAdmin }: { isAdmin: boolean }) {
     id: c.id, name: c.name, sub: c.phone || undefined,
     extra: `مديون: ${formatEGP(c.balance)} ج`,
   }));
+
+  async function handleDeleteOrCancel(inv: Invoice) {
+    const isCancelled = inv.status === "ملغاة";
+    const msg = isCancelled
+      ? `هل أنت متأكد من حذف الفاتورة رقم #${inv.invoice_number} نهائياً؟`
+      : `هل أنت متأكد من إلغاء الفاتورة رقم #${inv.invoice_number} وإرجاع الأصناف للمخزن؟`;
+    if (!confirm(msg)) return;
+    
+    const url = (isCancelled && isAdmin)
+      ? `/api/sales/invoices/${inv.id}?permanent=true`
+      : `/api/sales/invoices/${inv.id}`;
+      
+    const { error } = await mutate("DELETE", url);
+    if (error) {
+      alert("❌ " + error);
+      return;
+    }
+    refetch();
+  }
 
   return (
     <div className="space-y-4">
@@ -149,7 +170,7 @@ function SalesTab({ isAdmin }: { isAdmin: boolean }) {
           <div className="space-y-2 md:hidden">
             {data?.items.map(inv => (
               <div key={inv.id} className="card p-3">
-                <div onClick={() => setOpenInvoice(inv.id)} className="cursor-pointer">
+                <div onClick={() => { setOpenInvoice(inv); setOpenEditMode(false); }} className="cursor-pointer">
                   <div className="flex items-start justify-between mb-1.5">
                     <div className="font-mono font-bold text-nazlawy-600 text-lg">#{inv.invoice_number}</div>
                     <span className={`badge ${statusColor(inv.status)}`}>{inv.status}</span>
@@ -162,25 +183,29 @@ function SalesTab({ isAdmin }: { isAdmin: boolean }) {
                     <div className="font-bold text-nazlawy-600 text-base shrink-0 ml-2">{formatEGP(inv.total)} ج</div>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => window.open(`/print/invoice/${inv.id}?autoprint=1`, "_blank")} className="flex-1 text-xs px-2 py-1.5 rounded bg-nazlawy-50 text-nazlawy-700 hover:bg-nazlawy-100 border border-nazlawy-200 font-medium flex items-center justify-center gap-1">
-                    <span>🖨️</span>
-                    <span>طباعة</span>
+                <div className="flex gap-2 mt-2 pt-2 border-t" onClick={e => e.stopPropagation()}>
+                  <button
+                    onClick={() => { setOpenInvoice(inv); setOpenEditMode(false); }}
+                    className="flex-1 text-xs px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <span>👁️</span>
+                    <span>عرض الفاتورة</span>
                   </button>
-                  <button onClick={() => window.open(`/print/invoice/${inv.id}?download_image=1`, "_blank")} className="flex-1 text-xs px-2 py-1.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-medium flex items-center justify-center gap-1">
-                    <span>🖼️</span>
-                    <span>صورة</span>
+                  <button
+                    onClick={() => { setOpenInvoice(inv); setOpenEditMode(true); }}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <span>✏️</span>
+                    <span>تعديل</span>
                   </button>
-                  <button onClick={() => window.open(`/print/invoice/${inv.id}?download_pdf=1`, "_blank")} className="flex-1 text-xs px-2 py-1.5 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 font-medium flex items-center justify-center gap-1">
-                    <span>📄</span>
-                    <span>PDF</span>
+                  <button
+                    onClick={() => handleDeleteOrCancel(inv)}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                    title={isAdmin ? "حذف الفاتورة" : "إلغاء الفاتورة"}
+                  >
+                    <span>🗑️</span>
+                    <span>{inv.status === 'ملغاة' && isAdmin ? "حذف" : "إلغاء"}</span>
                   </button>
-                  {inv.customer && inv.status !== 'ملغاة' && (
-                    <button onClick={() => setPaymentInvoice(inv)} className="flex-1 text-xs px-2 py-1.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-300 font-bold flex items-center justify-center gap-1">
-                      <span>💳</span>
-                      <span>تحصيل</span>
-                    </button>
-                  )}
                 </div>
               </div>
             ))}
@@ -201,35 +226,33 @@ function SalesTab({ isAdmin }: { isAdmin: boolean }) {
               </thead>
               <tbody>
                 {data?.items.map(inv => (
-                  <tr key={inv.id} onClick={() => setOpenInvoice(inv)} className="border-t hover:bg-nazlawy-50 cursor-pointer transition-colors">
-                    <td className="p-3 font-mono font-bold">#{inv.invoice_number}</td>
+                  <tr key={inv.id} onClick={() => { setOpenInvoice(inv); setOpenEditMode(false); }} className="border-t hover:bg-nazlawy-50 cursor-pointer transition-colors">
+                    <td className="p-3 font-mono font-bold text-nazlawy-600">#{inv.invoice_number}</td>
                     <td className="p-3 text-xs">{formatDate(inv.invoice_date)}</td>
                     <td className="p-3 text-xs">{inv.invoice_type}</td>
-                    <td className="p-3">{inv.customer?.name || "—"}</td>
-                    <td className="p-3 text-xs">{inv.store?.name || "—"}</td>
+                    <td className="p-3 font-semibold text-slate-800">{inv.customer?.name || "—"}</td>
+                    <td className="p-3 text-xs text-gray-500">{inv.store?.name || "—"}</td>
                     <td className="p-3 text-center">{inv._count.items}</td>
-                    <td className="p-3 font-bold text-nazlawy-600">{formatEGP(inv.total)}</td>
+                    <td className="p-3 font-bold text-nazlawy-600">{formatEGP(inv.total)} ج</td>
                     <td className="p-3"><span className={`badge ${statusColor(inv.status)}`}>{inv.status}</span></td>
                     <td className="p-3" onClick={e => e.stopPropagation()}>
-                      <div className="flex gap-1.5 items-center">
-                        <button onClick={() => window.open(`/print/invoice/${inv.id}?autoprint=1`, "_blank")} className="text-xs px-2.5 py-1 rounded bg-nazlawy-50 text-nazlawy-700 hover:bg-nazlawy-100 border border-nazlawy-200 font-medium flex items-center gap-1" title="طباعة الفاتورة">
-                          <span>🖨️</span>
-                          <span>طباعة</span>
+                      <div className="flex gap-2 items-center">
+                        <button
+                          onClick={() => { setOpenInvoice(inv); setOpenEditMode(true); }}
+                          className="text-xs px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-bold flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                          title="تعديل الفاتورة"
+                        >
+                          <span>✏️</span>
+                          <span>تعديل</span>
                         </button>
-                        <button onClick={() => window.open(`/print/invoice/${inv.id}?download_image=1`, "_blank")} className="text-xs px-2.5 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-medium flex items-center gap-1" title="تحميل صورة الفاتورة للواتساب">
-                          <span>🖼️</span>
-                          <span>صورة</span>
+                        <button
+                          onClick={() => handleDeleteOrCancel(inv)}
+                          className="text-xs px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 font-bold flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                          title={isAdmin ? "حذف الفاتورة" : "إلغاء الفاتورة"}
+                        >
+                          <span>🗑️</span>
+                          <span>{inv.status === 'ملغاة' && isAdmin ? "حذف" : "إلغاء"}</span>
                         </button>
-                        <button onClick={() => window.open(`/print/invoice/${inv.id}?download_pdf=1`, "_blank")} className="text-xs px-2.5 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 font-medium flex items-center gap-1" title="تحميل ملف PDF">
-                          <span>📄</span>
-                          <span>PDF</span>
-                        </button>
-                        {inv.customer && inv.status !== 'ملغاة' && (
-                          <button onClick={() => setPaymentInvoice(inv)} className="text-xs px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-300 font-bold flex items-center gap-1 shadow-sm" title="تسجيل تحصيل لهذه الفاتورة">
-                            <span>💳</span>
-                            <span>تحصيل</span>
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -255,7 +278,8 @@ function SalesTab({ isAdmin }: { isAdmin: boolean }) {
           invoice={typeof openInvoice === 'object' ? openInvoice : null}
           invoiceId={typeof openInvoice === 'object' ? openInvoice.id : openInvoice}
           isAdmin={isAdmin}
-          onClose={() => setOpenInvoice(null)}
+          initialEditing={openEditMode}
+          onClose={() => { setOpenInvoice(null); setOpenEditMode(false); }}
           onChanged={refetch}
         />
       )}
@@ -449,9 +473,9 @@ function CustomerReturnDetailsModal({ returnId, isAdmin, onClose, onChanged }: {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MODAL — تفاصيل فاتورة المبيعات (full edit)
-function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, onClose, onChanged }: {
-  invoice?: Invoice | null; invoiceId: string; isAdmin: boolean; onClose: () => void; onChanged: () => void;
+// MODAL — تفاصيل فاتورة المبيعات (full edit & actions)
+function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = false, onClose, onChanged }: {
+  invoice?: Invoice | null; invoiceId: string; isAdmin: boolean; initialEditing?: boolean; onClose: () => void; onChanged: () => void;
 }) {
   const { data: inv, loading, refetch } = useApi<any>(`/api/sales/invoices/${invoiceId}`);
   const { data: storesData } = useApi<{ items: { id: string; name: string }[] }>("/api/stores");
@@ -462,7 +486,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, onClose, onChanged }
   );
   const { mutate, loading: saving } = useApiMutation();
 
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(initialEditing);
   const [items, setItems] = useState<any[]>([]);
   const [discount, setDiscount] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
@@ -693,38 +717,101 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, onClose, onChanged }
           {invData.notes && !editing && <div className="text-xs text-gray-600 pt-2 border-t">📝 {invData.notes}</div>}
         </div>
 
-        <div className="flex flex-wrap gap-2 pt-3 border-t">
-          <button onClick={() => window.open(`/print/invoice/${invoiceId}?autoprint=1`, "_blank")} className="btn-secondary text-sm">🖨️ طباعة</button>
-          <button onClick={() => window.open(`/print/invoice/${invoiceId}?download_image=1`, "_blank")} className="btn-secondary text-sm flex items-center gap-1">
-            <span>🖼️</span>
-            <span>صورة للواتساب</span>
-          </button>
-          {invData.customer_id && (
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t">
+          <div className="flex flex-wrap items-center gap-2">
+            {invData.customer_id && !isCancelled && (
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                title="تسجيل دفعة جديدة من العميل"
+              >
+                <span>💳</span>
+                <span>تسجيل تحصيل</span>
+              </button>
+            )}
             <button
-              onClick={() => setShowPaymentModal(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-1 shadow-sm transition-colors"
+              onClick={() => window.open(`/print/invoice/${invoiceId}?autoprint=1`, "_blank")}
+              className="bg-slate-800 hover:bg-slate-900 text-white text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
             >
-              <span>💳</span>
-              <span>تسجيل تحصيل</span>
+              <span>🖨️</span>
+              <span>طباعة</span>
             </button>
-          )}
-          {!isCancelled && !isCompleted && (
-            <>
-              {!editing ? (
-                <button onClick={() => setEditing(true)} className="btn-primary text-sm">✏️ تعديل</button>
-              ) : (
-                <>
-                  <button onClick={saveChanges} disabled={saving} className="btn-primary text-sm">{saving ? "⏳ جاري الحفظ..." : "💾 حفظ"}</button>
-                  <button onClick={() => { setEditing(false); setItems(invData.items || []); setDiscount(Number(invData.discount || 0)); setStatus(invData.status); setInvoiceType(invData.invoice_type); setNotes(invData.notes || ""); }} className="btn-secondary text-sm">إلغاء التعديل</button>
-                </>
-              )}
-              <button onClick={askCancelInvoice} className="text-sm px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100">❌ إلغاء الفاتورة</button>
-            </>
-          )}
-          {isCompleted && !isQuotation && <button onClick={askCancelInvoice} className="text-sm px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100">❌ إلغاء (إرجاع مخزون)</button>}
-          {isCancelled && <span className="text-sm text-red-700 font-bold self-center">🚫 ملغاة</span>}
-          {isAdmin && <button onClick={askDeleteInvoice} className="text-sm px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-black ml-auto">🗑️ حذف نهائي</button>}
-          <button onClick={onClose} className="btn-secondary text-sm">إغلاق</button>
+            <button
+              onClick={() => window.open(`/print/invoice/${invoiceId}?download_image=1`, "_blank")}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <span>🖼️</span>
+              <span>صورة للواتساب</span>
+            </button>
+            <button
+              onClick={() => window.open(`/print/invoice/${invoiceId}?download_pdf=1`, "_blank")}
+              className="bg-amber-600 hover:bg-amber-700 text-white text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <span>📄</span>
+              <span>تحميل PDF</span>
+            </button>
+            {!isCancelled && !isCompleted && (
+              <>
+                {!editing ? (
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="bg-nazlawy-500 hover:bg-nazlawy-600 text-white text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                  >
+                    <span>✏️</span>
+                    <span>تعديل</span>
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={saveChanges}
+                      disabled={saving}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                    >
+                      <span>{saving ? "⏳ جاري الحفظ..." : "💾 حفظ التعديلات"}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditing(false);
+                        setItems(invData.items || []);
+                        setDiscount(Number(invData.discount || 0));
+                        setStatus(invData.status);
+                        setInvoiceType(invData.invoice_type);
+                        setNotes(invData.notes || "");
+                      }}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer"
+                    >
+                      إلغاء التعديل
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+            {!isCancelled && (
+              <button
+                onClick={askCancelInvoice}
+                className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <span>❌</span>
+                <span>إلغاء الفاتورة</span>
+              </button>
+            )}
+            {isCancelled && <span className="text-xs md:text-sm text-red-600 font-bold self-center bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">🚫 الفاتورة ملغاة</span>}
+            {isAdmin && (
+              <button
+                onClick={askDeleteInvoice}
+                className="bg-red-950 hover:bg-black text-red-200 text-xs md:text-sm font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <span>🗑️</span>
+                <span>حذف نهائي</span>
+              </button>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs md:text-sm font-bold px-4 py-2 rounded-xl transition-all cursor-pointer"
+          >
+            إغلاق
+          </button>
         </div>
       </div>
 
