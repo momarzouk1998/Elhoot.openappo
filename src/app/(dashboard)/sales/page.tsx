@@ -478,12 +478,12 @@ function CustomerReturnDetailsModal({ returnId, isAdmin, onClose, onChanged }: {
 function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = false, onClose, onChanged }: {
   invoice?: Invoice | null; invoiceId: string; isAdmin: boolean; initialEditing?: boolean; onClose: () => void; onChanged: () => void;
 }) {
-  const { data: inv, loading, refetch } = useApi<any>(`/api/sales/invoices/${invoiceId}`);
+  const { data: inv, loading, refetch } = useApi<any>("/api/sales/invoices/" + invoiceId);
   const { data: storesData } = useApi<{ items: { id: string; name: string }[] }>("/api/stores");
   const [showProductPicker, setShowProductPicker] = useState(false);
   const [productSearch, setProductSearch] = useState("");
   const { data: searchProductsData, loading: searchingProducts } = useApi<{ items: { id: string; name: string; default_sale_price: number; total_stock: number }[] }>(
-    showProductPicker ? `/api/products?search=${encodeURIComponent(productSearch)}&limit=100` : null
+    showProductPicker ? ("/api/products?search=" + encodeURIComponent(productSearch) + "&limit=100") : null
   );
   const { mutate, loading: saving } = useApiMutation();
 
@@ -494,10 +494,6 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
   const [invoiceType, setInvoiceType] = useState("");
   const [notes, setNotes] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   const [downloadingImage, setDownloadingImage] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -558,7 +554,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
   async function saveChanges() {
     const validItems = items.filter((i: any) => Number(i.quantity) > 0 && Number(i.unit_price) >= 0);
     if (validItems.length === 0) { alert("❌ لازم صنف واحد على الأقل"); return; }
-    const { error } = await mutate("PATCH", `/api/sales/invoices/${invoiceId}`, {
+    const { error } = await mutate("PATCH", "/api/sales/invoices/" + invoiceId, {
       items: validItems.map((i: any) => ({ product_id: i.product_id, store_id: i.store_id || invData.store_id, quantity: i.quantity, unit_price: i.unit_price })),
       discount,
       status: invoiceType === "عرض سعر" ? "قيد التنفيذ" : status,
@@ -569,30 +565,9 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
     alert("✅ تم حفظ التعديلات"); setEditing(false); refetch(); onChanged();
   }
 
-  function askCancelInvoice() { setShowCancelConfirm(true); }
-  async function confirmCancelInvoice(keepPayments: boolean) {
-    setCancelling(true);
-    const url = keepPayments ? `/api/sales/invoices/${invoiceId}?keepPayments=true` : `/api/sales/invoices/${invoiceId}`;
-    const { error } = await mutate("DELETE", url);
-    setCancelling(false);
-    setShowCancelConfirm(false);
-    if (error) { alert("❌ " + error); return; }
-    onClose(); onChanged();
-  }
-  function askDeleteInvoice() { setShowDeleteConfirm(true); }
-  async function confirmDeleteInvoice(keepPayments: boolean) {
-    setDeleting(true);
-    const url = keepPayments ? `/api/sales/invoices/${invoiceId}?permanent=true&keepPayments=true` : `/api/sales/invoices/${invoiceId}?permanent=true`;
-    const { error } = await mutate("DELETE", url);
-    setDeleting(false);
-    setShowDeleteConfirm(false);
-    if (error) { alert("❌ " + error); return; }
-    onClose(); onChanged();
-  }
-
   const handleDirectDownloadImage = async () => {
     if (downloadingImage) return;
-    const element = document.getElementById(`invoice-sheet-${invoiceId}`);
+    const element = document.getElementById("invoice-sheet-" + invoiceId);
     if (!element) return;
     try {
       setDownloadingImage(true);
@@ -606,7 +581,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
         scrollY: 0,
       });
       const link = document.createElement("a");
-      link.download = `فاتورة شركة الحوت - ${invData.invoice_number}.png`;
+      link.download = "فاتورة شركة الحوت - #" + invData.invoice_number + ".png";
       link.href = canvas.toDataURL("image/png");
       link.click();
     } catch (err) {
@@ -619,7 +594,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
 
   const handleDirectDownloadPdf = async () => {
     if (downloadingPdf) return;
-    const element = document.getElementById(`invoice-sheet-${invoiceId}`);
+    const element = document.getElementById("invoice-sheet-" + invoiceId);
     if (!element) return;
     try {
       setDownloadingPdf(true);
@@ -641,7 +616,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
       const imgWidth = printableWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       pdf.addImage(imgData, "JPEG", margin, margin, imgWidth, imgHeight);
-      pdf.save(`فاتورة شركة الحوت - ${invData.invoice_number}.pdf`);
+      pdf.save("فاتورة شركة الحوت - #" + invData.invoice_number + ".pdf");
     } catch (err) {
       console.error(err);
       alert("❌ حدث خطأ أثناء تحميل ملف PDF");
@@ -680,8 +655,8 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           body * { visibility: hidden !important; }
-          #invoice-sheet-${invoiceId}, #invoice-sheet-${invoiceId} * { visibility: visible !important; }
-          #invoice-sheet-${invoiceId} {
+          #invoice-sheet-` + invoiceId + `, #invoice-sheet-` + invoiceId + ` * { visibility: visible !important; }
+          #invoice-sheet-` + invoiceId + ` {
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
@@ -694,30 +669,25 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
           .no-print { display: none !important; }
           @page { size: A4; margin: 10mm; }
         }
-      `}} />
+      ` }} />
 
-      <div className="sticky top-0 bg-slate-900 border-b border-sky-500/30 text-white p-3.5 flex items-center justify-between z-10 no-print rounded-t-2xl">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-slate-950 rounded-xl border border-sky-400/40 flex items-center justify-center p-1">
-            <img src="/logo.png" alt="شعار الحوت" className="h-full w-auto object-contain" />
-          </div>
-          <div>
-            <h2 className="text-base md:text-lg font-extrabold flex items-center gap-2">
-              فاتورة مبيعات <span className="text-amber-400 font-mono">#${invData.invoice_number}</span>
-              <span className={`badge ${statusColor(invData.status)} text-xs`}>${invData.status}</span>
-            </h2>
-            <p className="text-xs text-slate-300">${formatDate(invData.invoice_date)} • ${invData.invoice_type}</p>
-          </div>
-        </div>
-        <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">✕</button>
+      {/* Floating Close Button */}
+      <div className="relative">
+        <button
+          onClick={onClose}
+          className="absolute top-3 left-3 z-20 w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-950 text-white flex items-center justify-center transition-colors cursor-pointer no-print shadow-lg"
+          title="إغلاق"
+        >
+          ✕
+        </button>
       </div>
 
-      <div className="p-3 md:p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+      <div className="p-2 md:p-4 space-y-4 max-h-[85vh] overflow-y-auto">
         {editing ? (
           /* وضع التعديل (Edit Mode) */
-          <div className="space-y-4">
+          <div className="space-y-4 pt-6">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-slate-800">تعديل بنود الفاتورة ({displayItems.length})</h3>
+              <h3 className="font-bold text-slate-800 text-base">تعديل بنود الفاتورة ({displayItems.length})</h3>
               {!isCompleted && !isCancelled && (
                 <button onClick={() => setShowProductPicker(true)} className="text-xs btn-primary py-1.5 px-3 rounded-lg">+ صنف جديد</button>
               )}
@@ -768,17 +738,16 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
         ) : (
           /* العرض الرسمي المتطابق تماماً مع الفاتورة المطبوعة (Document View) */
           <div
-            id={`invoice-sheet-${invoiceId}`}
+            id={"invoice-sheet-" + invoiceId}
             className="printable-invoice-modal-content"
             style={{
               width: '100%',
-              maxWidth: '680px',
               margin: '0 auto',
               backgroundColor: C.white,
               borderRadius: '12px',
               overflow: 'hidden',
               boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              border: `1.5px solid ${C.borderDark}`,
+              border: '1.5px solid ' + C.borderDark,
               direction: 'rtl',
               textAlign: 'right',
               color: C.text,
@@ -786,28 +755,28 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
             }}
           >
             {/* Top Accent Line */}
-            <div style={{ height: '6px', background: `linear-gradient(90deg, ${C.darkNavy} 0%, ${C.navy} 60%, ${C.orange} 100%)` }} />
+            <div style={{ height: '6px', background: 'linear-gradient(90deg, ' + C.darkNavy + ' 0%, ' + C.navy + ' 60%, ' + C.orange + ' 100%)' }} />
 
             {/* Integrated Header */}
             <div
               style={{
-                padding: '1rem 1.25rem',
+                padding: '1.1rem 1.25rem',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                borderBottom: `2px solid ${C.border}`,
+                borderBottom: '2px solid ' + C.border,
                 background: '#ffffff',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <div
                   style={{
-                    width: '64px',
-                    height: '64px',
+                    width: '68px',
+                    height: '68px',
                     backgroundColor: C.white,
                     borderRadius: '10px',
                     padding: '3px',
-                    border: `2px solid ${C.orange}`,
+                    border: '2px solid ' + C.orange,
                     flexShrink: 0,
                     display: 'flex',
                     alignItems: 'center',
@@ -821,13 +790,13 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
                   />
                 </div>
                 <div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 900, color: C.darkNavy, lineHeight: 1.15 }}>
+                  <div style={{ fontSize: '1.45rem', fontWeight: 900, color: C.darkNavy, lineHeight: 1.15 }}>
                     شركة الحوت
                   </div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: C.orange, marginTop: '3px' }}>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: C.orange, marginTop: '3px' }}>
                     للأدوات واللوحات الكهربائية
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: C.muted, marginTop: '2px' }}>
+                  <div style={{ fontSize: '0.78rem', color: C.muted, marginTop: '2px' }}>
                     تجارة وتوزيع الجملة
                   </div>
                 </div>
@@ -845,15 +814,15 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
                     fontWeight: 800,
                   }}
                 >
-                  {isCancelled ? 'فاتورة ملغاة 🚫' : `فاتورة ${invData.invoice_type}`}
+                  {isCancelled ? 'فاتورة ملغاة 🚫' : ('فاتورة ' + invData.invoice_type)}
                 </div>
                 <div style={{ fontSize: '0.85rem', marginTop: '6px', color: C.text }}>
                   <span style={{ color: C.muted }}>رقم الفاتورة: </span>
-                  <strong style={{ fontFamily: 'monospace', fontSize: '1rem', color: C.darkNavy }}>#${invData.invoice_number}</strong>
+                  <strong style={{ fontFamily: 'monospace', fontSize: '1rem', color: C.darkNavy }}>#{invData.invoice_number}</strong>
                 </div>
                 <div style={{ fontSize: '0.8rem', marginTop: '2px', color: C.muted }}>
                   <span>التاريخ: </span>
-                  <strong style={{ color: C.text }}>${formatDate(invData.invoice_date)}</strong>
+                  <strong style={{ color: C.text }}>{formatDate(invData.invoice_date)}</strong>
                 </div>
               </div>
             </div>
@@ -862,7 +831,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
             <div
               style={{
                 backgroundColor: '#f1f5f9',
-                borderBottom: `2px solid ${C.border}`,
+                borderBottom: '2px solid ' + C.border,
                 padding: '0.65rem 1.25rem',
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -873,9 +842,9 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
               {invData.customer ? (
                 <div>
                   <span style={{ color: C.muted }}>العميل: </span>
-                  <strong style={{ fontSize: '1.05rem', color: C.darkNavy, fontWeight: 900 }}>${invData.customer.name}</strong>
+                  <strong style={{ fontSize: '1.05rem', color: C.darkNavy, fontWeight: 900 }}>{invData.customer.name}</strong>
                   {invData.customer.phone && (
-                    <span style={{ color: C.muted, marginRight: '10px', fontSize: '0.85rem' }}>📞 ${invData.customer.phone}</span>
+                    <span style={{ color: C.muted, marginRight: '10px', fontSize: '0.85rem' }}>📞 {invData.customer.phone}</span>
                   )}
                 </div>
               ) : (
@@ -888,15 +857,15 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
               {invData.store && (
                 <div style={{ color: C.muted, fontSize: '0.85rem' }}>
                   <span>المخزن: </span>
-                  <strong style={{ color: C.text }}>${invData.store.name}</strong>
+                  <strong style={{ color: C.text }}>{invData.store.name}</strong>
                 </div>
               )}
             </div>
 
             {/* Items Table */}
-            <table style={{ width: '100%', fontSize: '0.9rem', borderCollapse: 'collapse' }}>
+            <table style={{ width: '100%', fontSize: '0.92rem', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ backgroundColor: C.tableHeader, color: C.white, borderBottom: `2px solid ${C.orange}` }}>
+                <tr style={{ backgroundColor: C.tableHeader, color: C.white, borderBottom: '2px solid ' + C.orange }}>
                   <th style={{ padding: '8px 10px', textAlign: 'center', width: '36px', fontSize: '0.85rem' }}>م</th>
                   <th style={{ padding: '8px 10px', textAlign: 'right', fontSize: '0.9rem' }}>الصنف والبيان</th>
                   <th style={{ padding: '8px 10px', textAlign: 'center', width: '55px', fontSize: '0.85rem' }}>الكمية</th>
@@ -910,19 +879,19 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
                     key={it.id || i}
                     style={{
                       backgroundColor: i % 2 === 0 ? C.rowAlt : C.white,
-                      borderBottom: `1px solid #e2e8f0`,
+                      borderBottom: '1px solid #e2e8f0',
                     }}
                   >
-                    <td style={{ padding: '8px 10px', textAlign: 'center', color: C.muted, fontWeight: 700 }}>${i + 1}</td>
-                    <td style={{ padding: '8px 10px', fontWeight: 800, color: C.text, fontSize: '0.95rem' }}>${it.product_name}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'center', color: C.muted, fontWeight: 700 }}>{i + 1}</td>
+                    <td style={{ padding: '8px 10px', fontWeight: 800, color: C.text, fontSize: '0.95rem' }}>{it.product_name}</td>
                     <td style={{ padding: '8px 10px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 900, fontSize: '1rem', color: C.darkNavy }}>
-                      ${Number(it.quantity)}
+                      {Number(it.quantity)}
                     </td>
                     <td style={{ padding: '8px 10px', textAlign: 'left', fontFamily: 'monospace', fontWeight: 700, fontSize: '0.95rem' }}>
-                      ${formatEGP(Number(it.unit_price))}
+                      {formatEGP(Number(it.unit_price))}
                     </td>
                     <td style={{ padding: '8px 10px', textAlign: 'left', fontFamily: 'monospace', fontWeight: 900, fontSize: '1.05rem', color: C.navy }}>
-                      ${formatEGP(Number(it.line_total || (Number(it.quantity) * Number(it.unit_price))))}
+                      {formatEGP(Number(it.line_total || (Number(it.quantity) * Number(it.unit_price))))}
                     </td>
                   </tr>
                 ))}
@@ -933,14 +902,14 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
             <div
               style={{
                 padding: '0.75rem 1.25rem',
-                borderTop: `2px solid ${C.navy}`,
+                borderTop: '2px solid ' + C.navy,
                 backgroundColor: '#ffffff',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', marginBottom: '4px' }}>
                 <span style={{ color: C.muted, fontWeight: 600 }}>الإجمالي قبل الخصم:</span>
                 <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '1rem' }}>
-                  ${formatEGP(Number(invData.subtotal || subtotal))} ج
+                  {formatEGP(Number(invData.subtotal || subtotal))} ج
                 </span>
               </div>
 
@@ -960,7 +929,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
                 >
                   <span style={{ fontWeight: 700 }}>الخصم:</span>
                   <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '1rem' }}>
-                    - ${formatEGP(Number(invData.discount || discount))} ج
+                    - {formatEGP(Number(invData.discount || discount))} ج
                   </span>
                 </div>
               )}
@@ -972,13 +941,13 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
                   alignItems: 'center',
                   fontSize: '1.35rem',
                   fontWeight: 900,
-                  borderTop: `2px dashed ${C.border}`,
+                  borderTop: '2px dashed ' + C.border,
                   paddingTop: '6px',
                   color: C.darkNavy,
                 }}
               >
                 <span>إجمالي الفاتورة الحالية:</span>
-                <span style={{ fontFamily: 'monospace', color: C.darkNavy, fontSize: '1.45rem' }}>${formatEGP(Number(currentInvoiceTotal))} ج</span>
+                <span style={{ fontFamily: 'monospace', color: C.darkNavy, fontSize: '1.45rem' }}>{formatEGP(Number(currentInvoiceTotal))} ج</span>
               </div>
             </div>
 
@@ -988,7 +957,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
                 style={{
                   margin: '0.5rem 1.25rem 0.85rem 1.25rem',
                   borderRadius: '10px',
-                  border: `2px solid ${isCancelled ? '#fca5a5' : C.navy}`,
+                  border: '2px solid ' + (isCancelled ? '#fca5a5' : C.navy),
                   backgroundColor: isCancelled ? '#fff1f2' : '#f8fafc',
                   overflow: 'hidden',
                   boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
@@ -1018,7 +987,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
                     display: 'grid',
                     gridTemplateColumns: isCancelled ? '1fr 1fr' : paidOnDate > 0 ? '1fr 1fr 1fr 1.2fr' : '1fr 1fr 1.2fr',
                     textAlign: 'center',
-                    borderBottom: `1px solid ${C.border}`,
+                    borderBottom: '1px solid ' + C.border,
                     backgroundColor: '#edf2f7',
                     padding: '6px 0',
                     fontWeight: 800,
@@ -1043,20 +1012,20 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
                   }}
                 >
                   <div style={{ color: prevBalance > 0.01 ? C.red : prevBalance < -0.01 ? C.green : C.muted, fontSize: '1.05rem' }}>
-                    ${formatEGP(prevBalance)} ج
+                    {formatEGP(prevBalance)} ج
                   </div>
                   {!isCancelled && (
                     <div style={{ color: C.darkOrange, fontSize: '1.05rem' }}>
-                      +${formatEGP(Number(currentInvoiceTotal))} ج
+                      +{formatEGP(Number(currentInvoiceTotal))} ج
                     </div>
                   )}
                   {!isCancelled && paidOnDate > 0 && (
                     <div style={{ color: C.green, fontSize: '1.05rem' }}>
-                      -${formatEGP(paidOnDate)} ج
+                      -{formatEGP(paidOnDate)} ج
                     </div>
                   )}
                   <div style={{ color: newBalance > 0.01 ? C.red : newBalance < -0.01 ? C.green : C.darkNavy, fontSize: '1.25rem', backgroundColor: '#f1f5f9', padding: '2px 0' }}>
-                    ${formatEGP(newBalance)} ج
+                    {formatEGP(newBalance)} ج
                   </div>
                 </div>
               </div>
@@ -1065,7 +1034,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
             {/* Notes */}
             {invData.notes && (
               <div style={{ margin: '0.5rem 1.25rem', padding: '8px 12px', backgroundColor: '#fffbeb', borderRadius: '8px', border: '1px solid #fde68a', fontSize: '0.8rem', color: '#92400e' }}>
-                <strong>ملاحظات: </strong> ${invData.notes}
+                <strong>ملاحظات: </strong> {invData.notes}
               </div>
             )}
 
@@ -1074,7 +1043,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
               style={{
                 backgroundColor: '#f8fafc',
                 padding: '0.75rem 1.25rem',
-                borderTop: `1.5px solid ${C.border}`,
+                borderTop: '1.5px solid ' + C.border,
                 textAlign: 'center',
                 fontSize: '0.8rem',
                 color: '#475569',
@@ -1092,11 +1061,11 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
       {/* Modal Actions Footer (no-print) */}
       <div className="px-4 py-3 bg-slate-100 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 no-print rounded-b-2xl">
         <div className="flex flex-wrap items-center gap-2">
-          {invData.customer_id && !isCancelled && (
+          {!isCancelled && (
             <button
               onClick={() => setShowPaymentModal(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
-              title="تسجيل دفعة نقدية جديدة من العميل"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+              title="تسجيل تحصيل / دفعة"
             >
               <span>💳</span>
               <span>تسجيل تحصيل</span>
@@ -1106,26 +1075,26 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
           <button
             onClick={handleDirectDownloadImage}
             disabled={downloadingImage}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
-            title="تحميل صورة الفاتورة للواتساب مباشرة"
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+            title="تحميل صورة الفاتورة"
           >
             <span>{downloadingImage ? "⏳" : "🖼️"}</span>
-            <span>{downloadingImage ? "جاري تجهيز الصورة..." : "حفظ صورة واتساب"}</span>
+            <span>{downloadingImage ? "جاري التجهيز..." : "صورة"}</span>
           </button>
 
           <button
             onClick={handleDirectDownloadPdf}
             disabled={downloadingPdf}
-            className="bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
-            title="تحميل ملف PDF مباشرة"
+            className="bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+            title="تحميل PDF"
           >
             <span>{downloadingPdf ? "⏳" : "📄"}</span>
-            <span>{downloadingPdf ? "جاري إنشاء PDF..." : "تحميل PDF"}</span>
+            <span>{downloadingPdf ? "جاري الإنشاء..." : "PDF"}</span>
           </button>
 
           <button
             onClick={handlePrint}
-            className="bg-slate-800 hover:bg-slate-900 text-white text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+            className="bg-slate-800 hover:bg-slate-900 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
           >
             <span>🖨️</span>
             <span>طباعة</span>
@@ -1136,7 +1105,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
               {!editing ? (
                 <button
                   onClick={() => setEditing(true)}
-                  className="bg-nazlawy-500 hover:bg-nazlawy-600 text-white text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                  className="bg-nazlawy-500 hover:bg-nazlawy-600 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
                 >
                   <span>✏️</span>
                   <span>تعديل</span>
@@ -1167,26 +1136,6 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
               )}
             </>
           )}
-
-          {!isCancelled && (
-            <button
-              onClick={askCancelInvoice}
-              className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
-            >
-              <span>❌</span>
-              <span>إلغاء الفاتورة</span>
-            </button>
-          )}
-          {isCancelled && <span className="text-xs md:text-sm text-red-600 font-bold self-center bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">🚫 الفاتورة ملغاة</span>}
-          {isAdmin && (
-            <button
-              onClick={askDeleteInvoice}
-              className="bg-red-950 hover:bg-black text-red-200 text-xs md:text-sm font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
-            >
-              <span>🗑️</span>
-              <span>حذف نهائي</span>
-            </button>
-          )}
         </div>
 
         <button
@@ -1201,7 +1150,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
         <CustomerPaymentModal
           isOpen={showPaymentModal}
           onClose={() => setShowPaymentModal(false)}
-          defaultCustomerId={invData.customer_id}
+          defaultCustomerId={invData.customer_id || undefined}
           defaultCustomerName={invData.customer?.name}
           defaultInvoiceId={invData.id}
           onSuccess={() => {
@@ -1233,154 +1182,11 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
                 ))
               ) : (
                 <div className="p-8 text-center text-gray-400 font-semibold">
-                  {productSearch.trim() ? `لا توجد نتائج لـ "${productSearch}"` : 'لا توجد أصناف'}
+                  {productSearch.trim() ? ("لا توجد نتائج لـ \"" + productSearch + "\"") : 'لا توجد أصناف'}
                 </div>
               )}
             </div>
             <div className="p-3 border-t"><button onClick={() => setShowProductPicker(false)} className="btn-secondary w-full">إلغاء</button></div>
-          </div>
-        </div>
-      )}
-
-      {/* مودال تأكيد إلغاء الفاتورة */}
-      {showCancelConfirm && (
-        <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4 border-2 border-red-500">
-            <div className="text-center">
-              <div className="text-5xl mb-2">⚠️</div>
-              <h3 className="text-lg font-extrabold text-gray-900">تأكيد إلغاء الفاتورة</h3>
-              <p className="text-sm text-gray-500 mt-1">فاتورة #${invData.invoice_number} — إجمالي: ${formatEGP(Number(invData.total))} ج</p>
-            </div>
-
-            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-800 space-y-1">
-              <p className="font-bold">ماذا يحدث عند الإلغاء؟</p>
-              <p>• سيتم إرجاع كافة الأصناف للمخزن تلقائياً</p>
-              <p>• ستتغير حالة الفاتورة إلى "ملغاة"</p>
-            </div>
-
-            {Number(invData.paid_amount) > 0 ? (
-              <div className="space-y-2">
-                <p className="text-xs font-bold text-center text-gray-600">
-                  يوجد دفع مرتبط بالفاتورة — اختر ماذا تريد:
-                </p>
-
-                <button
-                  onClick={() => confirmCancelInvoice(true)}
-                  disabled={cancelling}
-                  className="w-full text-right bg-amber-50 border-2 border-amber-400 hover:bg-amber-100 rounded-xl p-3 transition-all disabled:opacity-60"
-                >
-                  <div className="font-extrabold text-amber-800 text-sm">💰 إلغاء الفاتورة فقط</div>
-                  <div className="text-xs text-amber-700 mt-0.5">
-                    المدفوع (${formatEGP(Number(invData.paid_amount))} ج) يفضل في الخزينة ويصبح رصيد دائن للعميل
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => confirmCancelInvoice(false)}
-                  disabled={cancelling}
-                  className="w-full text-right bg-red-50 border-2 border-red-400 hover:bg-red-100 rounded-xl p-3 transition-all disabled:opacity-60"
-                >
-                  <div className="font-extrabold text-red-800 text-sm">🗑️ إلغاء الفاتورة + حذف الدفع</div>
-                  <div className="text-xs text-red-700 mt-0.5">
-                    خصم ${formatEGP(Number(invData.paid_amount))} ج من الخزينة وإرجاع رصيد العميل كما كان
-                  </div>
-                </button>
-
-                {cancelling && <p className="text-center text-xs text-gray-500">⏳ جاري الإلغاء...</p>}
-              </div>
-            ) : (
-              <>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs text-blue-700 text-center">
-                  ℹ️ لا يوجد مبالغ مدفوعة مرتبطة بهذه الفاتورة
-                </div>
-                <button
-                  onClick={() => confirmCancelInvoice(false)}
-                  disabled={cancelling}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-2.5 rounded-xl text-sm transition-colors disabled:opacity-60"
-                >
-                  {cancelling ? "⏳ جاري الإلغاء..." : "✅ نعم، إلغاء الفاتورة"}
-                </button>
-              </>
-            )}
-
-            <button
-              onClick={() => setShowCancelConfirm(false)}
-              disabled={cancelling}
-              className="w-full btn-secondary text-sm"
-            >
-              رجوع
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* مودال تأكيد الحذف النهائي (أدمن فقط) */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[70] bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4 border-2 border-gray-800">
-            <div className="text-center">
-              <div className="text-5xl mb-2">🗑️</div>
-              <h3 className="text-lg font-extrabold text-gray-900">حذف نهائي — لا يمكن التراجع</h3>
-              <p className="text-sm text-gray-500 mt-1">فاتورة #${invData.invoice_number} — إجمالي: ${formatEGP(Number(invData.total))} ج</p>
-            </div>
-
-            <div className="bg-gray-900 text-white rounded-xl p-3 text-xs">
-              <p className="font-bold mb-1">⚠️ سيتم حذف الفاتورة وبنودها من قاعدة البيانات نهائياً</p>
-              <p className="text-gray-300">لا توجد طريقة للتراجع عن هذا الإجراء</p>
-            </div>
-
-            {Number(invData.paid_amount) > 0 ? (
-              <div className="space-y-2">
-                <p className="text-xs font-bold text-center text-gray-600">
-                  يوجد دفع مرتبط بالفاتورة — اختر ماذا تريد:
-                </p>
-
-                <button
-                  onClick={() => confirmDeleteInvoice(true)}
-                  disabled={deleting}
-                  className="w-full text-right bg-amber-50 border-2 border-amber-400 hover:bg-amber-100 rounded-xl p-3 transition-all disabled:opacity-60"
-                >
-                  <div className="font-extrabold text-amber-800 text-sm">💰 حذف الفاتورة + الإبقاء على الدفع</div>
-                  <div className="text-xs text-amber-700 mt-0.5">
-                    المدفوع (${formatEGP(Number(invData.paid_amount))} ج) يصبح رصيد دائن للعميل في الخزينة
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => confirmDeleteInvoice(false)}
-                  disabled={deleting}
-                  className="w-full text-right bg-red-50 border-2 border-red-400 hover:bg-red-100 rounded-xl p-3 transition-all disabled:opacity-60"
-                >
-                  <div className="font-extrabold text-red-800 text-sm">🗑️ حذف الفاتورة + حذف الدفع</div>
-                  <div className="text-xs text-red-700 mt-0.5">
-                    خصم ${formatEGP(Number(invData.paid_amount))} ج من الخزينة وإرجاع رصيد العميل كما كان
-                  </div>
-                </button>
-
-                {deleting && <p className="text-center text-xs text-gray-500">⏳ جاري الحذف...</p>}
-              </div>
-            ) : (
-              <>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs text-blue-700 text-center">
-                  ℹ️ لا يوجد مبالغ مدفوعة مرتبطة بهذه الفاتورة
-                </div>
-                <button
-                  onClick={() => confirmDeleteInvoice(false)}
-                  disabled={deleting}
-                  className="w-full bg-gray-900 hover:bg-black text-white font-extrabold py-2.5 rounded-xl text-sm transition-colors disabled:opacity-60"
-                >
-                  {deleting ? "⏳ جاري الحذف..." : "🗑️ تأكيد الحذف النهائي"}
-                </button>
-              </>
-            )}
-
-            <button
-              onClick={() => setShowDeleteConfirm(false)}
-              disabled={deleting}
-              className="w-full btn-secondary text-sm"
-            >
-              رجوع
-            </button>
           </div>
         </div>
       )}
