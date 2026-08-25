@@ -497,6 +497,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
 
   const [downloadingImage, setDownloadingImage] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [sharingWhatsapp, setSharingWhatsapp] = useState(false);
 
   useEffect(() => {
     if (inv && !editing) {
@@ -564,6 +565,69 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
     if (error) { alert("❌ " + error); return; }
     alert("✅ تم حفظ التعديلات"); setEditing(false); refetch(); onChanged();
   }
+
+  const handleShareWhatsapp = async () => {
+    if (sharingWhatsapp) return;
+    const element = document.getElementById("invoice-sheet-" + invoiceId);
+    if (!element) return;
+    try {
+      setSharingWhatsapp(true);
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(element, {
+        useCORS: true,
+        allowTaint: true,
+        scale: 2,
+        backgroundColor: "#ffffff",
+        scrollX: 0,
+        scrollY: 0,
+      });
+
+      const customerPhone = invData.customer?.whatsapp || invData.customer?.phone;
+      const cleanPhone = customerPhone ? String(customerPhone).replace(/\D/g, "") : "";
+      const formattedPhone = cleanPhone.startsWith("0") ? ("2" + cleanPhone) : cleanPhone;
+      const customerName = invData.customer?.name || "العميل المحترم";
+      const invoiceText = "مرحباً بك أستاذ " + customerName + "،\nمرفق فاتورة شركة الحوت رقم #" + invData.invoice_number + "\nالمبلغ المطلوب: " + formatEGP(currentInvoiceTotal) + " ج\nشكراً لتعاملكم معنا.";
+
+      // 1. Web Share API with File (Native mobile Chrome/Safari share directly to WhatsApp)
+      if (typeof navigator !== "undefined" && navigator.canShare) {
+        try {
+          const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+          if (blob) {
+            const file = new File([blob], "فاتورة_شركة_الحوت_" + invData.invoice_number + ".png", { type: "image/png" });
+            if (navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: "فاتورة شركة الحوت #" + invData.invoice_number,
+                text: invoiceText,
+              });
+              return;
+            }
+          }
+        } catch (shareErr: any) {
+          if (shareErr?.name === "AbortError") {
+            return;
+          }
+          console.warn("Native share failed, falling back to download & WhatsApp link", shareErr);
+        }
+      }
+
+      // 2. Fallback: Automatically download image & open WhatsApp directly
+      const link = document.createElement("a");
+      link.download = "فاتورة شركة الحوت - #" + invData.invoice_number + ".png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+
+      const waUrl = formattedPhone
+        ? ("https://wa.me/" + formattedPhone + "?text=" + encodeURIComponent(invoiceText))
+        : ("https://wa.me/?text=" + encodeURIComponent(invoiceText));
+      window.open(waUrl, "_blank");
+    } catch (err) {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء إرسال الفاتورة عبر واتساب");
+    } finally {
+      setSharingWhatsapp(false);
+    }
+  };
 
   const handleDirectDownloadImage = async () => {
     if (downloadingImage) return;
@@ -1075,6 +1139,16 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
           {!editing && (
             <>
               <button
+                onClick={handleShareWhatsapp}
+                disabled={sharingWhatsapp}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                title="إرسال صورة الفاتورة مباشرة للعميل على واتساب"
+              >
+                <span>{sharingWhatsapp ? "⏳" : "📲"}</span>
+                <span>{sharingWhatsapp ? "جاري التجهيز..." : "إرسال واتساب"}</span>
+              </button>
+
+              <button
                 onClick={handleDirectDownloadImage}
                 disabled={downloadingImage}
                 className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
@@ -1185,7 +1259,6 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
     </ModalShell>
   );
 }
-
 // ─── Shared helpers ───────────────────────────────────────
 function ModalShell({ onClose, wide, children }: { onClose: () => void; wide?: boolean; children: React.ReactNode }) {
   return (
