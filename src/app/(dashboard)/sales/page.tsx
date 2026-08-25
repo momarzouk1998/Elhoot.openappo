@@ -1061,79 +1061,71 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
       {/* Modal Actions Footer (no-print) */}
       <div className="px-4 py-3 bg-slate-100 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 no-print rounded-b-2xl">
         <div className="flex flex-wrap items-center gap-2">
-          {!isCancelled && (
+          {!isCancelled && !editing && (
             <button
               onClick={() => setShowPaymentModal(true)}
               className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
-              title="تسجيل تحصيل / دفعة"
+              title="تحصيل"
             >
               <span>💳</span>
-              <span>تسجيل تحصيل</span>
+              <span>تحصيل</span>
             </button>
           )}
 
-          <button
-            onClick={handleDirectDownloadImage}
-            disabled={downloadingImage}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
-            title="تحميل صورة الفاتورة"
-          >
-            <span>{downloadingImage ? "⏳" : "🖼️"}</span>
-            <span>{downloadingImage ? "جاري التجهيز..." : "صورة"}</span>
-          </button>
-
-          <button
-            onClick={handleDirectDownloadPdf}
-            disabled={downloadingPdf}
-            className="bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
-            title="تحميل PDF"
-          >
-            <span>{downloadingPdf ? "⏳" : "📄"}</span>
-            <span>{downloadingPdf ? "جاري الإنشاء..." : "PDF"}</span>
-          </button>
-
-          <button
-            onClick={handlePrint}
-            className="bg-slate-800 hover:bg-slate-900 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
-          >
-            <span>🖨️</span>
-            <span>طباعة</span>
-          </button>
-
-          {!isCancelled && !isCompleted && (
+          {!editing && (
             <>
-              {!editing ? (
-                <button
-                  onClick={() => setEditing(true)}
-                  className="bg-nazlawy-500 hover:bg-nazlawy-600 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
-                >
-                  <span>✏️</span>
-                  <span>تعديل</span>
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={saveChanges}
-                    disabled={saving}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-                  >
-                    <span>{saving ? "⏳ جاري الحفظ..." : "💾 حفظ التعديلات"}</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditing(false);
-                      setItems(invData.items || []);
-                      setDiscount(Number(invData.discount || 0));
-                      setStatus(invData.status);
-                      setInvoiceType(invData.invoice_type);
-                      setNotes(invData.notes || "");
-                    }}
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer"
-                  >
-                    إلغاء التعديل
-                  </button>
-                </>
-              )}
+              <button
+                onClick={handleDirectDownloadImage}
+                disabled={downloadingImage}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                title="تحميل صورة الفاتورة"
+              >
+                <span>{downloadingImage ? "⏳" : "🖼️"}</span>
+                <span>{downloadingImage ? "جاري التجهيز..." : "صورة"}</span>
+              </button>
+
+              <button
+                onClick={handleDirectDownloadPdf}
+                disabled={downloadingPdf}
+                className="bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                title="تحميل PDF"
+              >
+                <span>{downloadingPdf ? "⏳" : "📄"}</span>
+                <span>{downloadingPdf ? "جاري الإنشاء..." : "PDF"}</span>
+              </button>
+
+              <button
+                onClick={handlePrint}
+                className="bg-slate-800 hover:bg-slate-900 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <span>🖨️</span>
+                <span>طباعة</span>
+              </button>
+            </>
+          )}
+
+          {editing && !isCancelled && !isCompleted && (
+            <>
+              <button
+                onClick={saveChanges}
+                disabled={saving}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                <span>{saving ? "⏳ جاري الحفظ..." : "💾 حفظ التعديلات"}</span>
+              </button>
+              <button
+                onClick={() => {
+                  setEditing(false);
+                  setItems(invData.items || []);
+                  setDiscount(Number(invData.discount || 0));
+                  setStatus(invData.status);
+                  setInvoiceType(invData.invoice_type);
+                  setNotes(invData.notes || "");
+                }}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer"
+              >
+                إلغاء التعديل
+              </button>
             </>
           )}
         </div>
