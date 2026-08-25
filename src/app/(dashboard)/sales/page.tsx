@@ -162,7 +162,7 @@ function SalesTab({ isAdmin }: { isAdmin: boolean }) {
                     <div className="font-bold text-nazlawy-600 text-base shrink-0 ml-2">{formatEGP(inv.total)} ج</div>
                   </div>
                 </div>
-                <div className="flex gap-2 mt-2 pt-2 border-t" onClick={e => e.stopPropagation()}>
+                <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t" onClick={e => e.stopPropagation()}>
                   <button onClick={() => window.open(`/print/invoice/${inv.id}?autoprint=1`, "_blank")} className="flex-1 text-xs px-2 py-1.5 rounded bg-nazlawy-50 text-nazlawy-700 hover:bg-nazlawy-100 border border-nazlawy-200 font-medium flex items-center justify-center gap-1">
                     <span>🖨️</span>
                     <span>طباعة</span>
@@ -170,6 +170,10 @@ function SalesTab({ isAdmin }: { isAdmin: boolean }) {
                   <button onClick={() => window.open(`/print/invoice/${inv.id}?download_image=1`, "_blank")} className="flex-1 text-xs px-2 py-1.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-medium flex items-center justify-center gap-1">
                     <span>🖼️</span>
                     <span>صورة</span>
+                  </button>
+                  <button onClick={() => window.open(`/print/invoice/${inv.id}?download_pdf=1`, "_blank")} className="flex-1 text-xs px-2 py-1.5 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 font-medium flex items-center justify-center gap-1">
+                    <span>📄</span>
+                    <span>PDF</span>
                   </button>
                   {inv.customer && inv.status !== 'ملغاة' && (
                     <button onClick={() => setPaymentInvoice(inv)} className="flex-1 text-xs px-2 py-1.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-300 font-bold flex items-center justify-center gap-1">
@@ -215,6 +219,10 @@ function SalesTab({ isAdmin }: { isAdmin: boolean }) {
                         <button onClick={() => window.open(`/print/invoice/${inv.id}?download_image=1`, "_blank")} className="text-xs px-2.5 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-medium flex items-center gap-1" title="تحميل صورة الفاتورة للواتساب">
                           <span>🖼️</span>
                           <span>صورة</span>
+                        </button>
+                        <button onClick={() => window.open(`/print/invoice/${inv.id}?download_pdf=1`, "_blank")} className="text-xs px-2.5 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 font-medium flex items-center gap-1" title="تحميل ملف PDF">
+                          <span>📄</span>
+                          <span>PDF</span>
                         </button>
                         {inv.customer && inv.status !== 'ملغاة' && (
                           <button onClick={() => setPaymentInvoice(inv)} className="text-xs px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-300 font-bold flex items-center gap-1 shadow-sm" title="تسجيل تحصيل لهذه الفاتورة">

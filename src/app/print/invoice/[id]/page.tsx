@@ -31,12 +31,13 @@ export default async function InvoicePrintPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ autoprint?: string; download_image?: string }>;
+  searchParams: Promise<{ autoprint?: string; download_image?: string; download_pdf?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
   const autoprint = sp.autoprint === '1';
   const downloadImage = sp.download_image === '1';
+  const downloadPdf = sp.download_pdf === '1';
 
   const invoice = await prisma.sales_invoices.findUnique({
     where: { id },
@@ -196,7 +197,7 @@ export default async function InvoicePrintPage({
               />
             </div>
             <div>
-              <div style={{ fontSize: '1.45rem', fontWeight: 900, color: C.darkNavy, lineHeight: 1.15, letterSpacing: '-0.02em' }}>
+              <div style={{ fontSize: '1.45rem', fontWeight: 900, color: C.darkNavy, lineHeight: 1.15 }}>
                 شركة الحوت
               </div>
               <div style={{ fontSize: '0.85rem', fontWeight: 700, color: C.orange, marginTop: '3px' }}>
@@ -219,7 +220,6 @@ export default async function InvoicePrintPage({
                 borderRadius: '20px',
                 fontSize: '0.9rem',
                 fontWeight: 800,
-                letterSpacing: '0.02em',
               }}
             >
               {isCancelled ? 'فاتورة ملغاة 🚫' : `فاتورة ${invoice.invoice_type}`}
@@ -385,7 +385,6 @@ export default async function InvoicePrintPage({
                 fontSize: '0.85rem',
                 fontWeight: 800,
                 textAlign: 'center',
-                letterSpacing: '0.02em',
               }}
             >
               📑 كشف حساب العميل مدمج بالفاتورة
@@ -464,6 +463,7 @@ export default async function InvoicePrintPage({
       <PrintActions
         autoprint={autoprint}
         downloadImage={downloadImage}
+        downloadPdf={downloadPdf}
         fileName={`فاتورة شركة الحوت - ${invoice.invoice_number}`}
         targetId="statement"
         invoiceId={invoice.id}

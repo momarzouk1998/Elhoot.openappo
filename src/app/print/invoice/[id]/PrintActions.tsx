@@ -8,6 +8,7 @@ import CustomerPaymentModal from "@/components/CustomerPaymentModal";
 export default function PrintActions({
   autoprint,
   downloadImage = false,
+  downloadPdf = false,
   backLink = "/sales",
   backLabel = "↩️ عودة",
   fileName = "فاتورة شركة الحوت",
@@ -19,6 +20,7 @@ export default function PrintActions({
 }: {
   autoprint?: boolean;
   downloadImage?: boolean;
+  downloadPdf?: boolean;
   backLink?: string;
   backLabel?: string;
   fileName?: string;
@@ -58,6 +60,28 @@ export default function PrintActions({
       triggerDownload();
     }
   }, [downloadImage]);
+
+  useEffect(() => {
+    if (downloadPdf) {
+      const triggerDownloadPdf = async () => {
+        // Wait for rendering to complete
+        await new Promise(resolve => setTimeout(resolve, 850));
+        const pdfBtn = document.getElementById("pdf-download-btn") as HTMLButtonElement | null;
+        if (pdfBtn) {
+          pdfBtn.click();
+          // Wait for file conversion and click to download, then close tab
+          setTimeout(() => {
+            try {
+              window.close();
+            } catch (err) {
+              console.warn(err);
+            }
+          }, 3500);
+        }
+      };
+      triggerDownloadPdf();
+    }
+  }, [downloadPdf]);
 
   function handleClose() {
     try {
