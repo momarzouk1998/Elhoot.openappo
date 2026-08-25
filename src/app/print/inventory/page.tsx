@@ -5,9 +5,9 @@ import PrintActions from '@/app/print/invoice/[id]/PrintActions';
 export const dynamic = 'force-dynamic';
 
 const C = {
-  orange: '#f56226',
-  darkOrange: '#d9531e',
-  gray: '#677077',
+  orange: '#f7941d',
+  darkOrange: '#d97706',
+  gray: '#002b61',
   text: '#343a40',
   lightBg: '#f8f9fa',
   border: '#dee2e6',
@@ -122,7 +122,7 @@ export default async function PrintInventoryReportPage() {
           gap: '1rem',
         }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800 }}>معرض النزلاوي</h1>
+            <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800 }}>شركة الحوت</h1>
             <p style={{ margin: '4px 0 0', opacity: 0.9, fontSize: '1rem', fontWeight: 600 }}>
               📦 تقرير جرد وإحصائيات المخازن الشامل
             </p>
@@ -326,13 +326,8 @@ export default async function PrintInventoryReportPage() {
           color: '#666',
           fontSize: '0.82rem',
         }}>
-          <p style={{ fontWeight: 700, color: '#2c3e50', marginBottom: '4px' }}>شكراً لتعاملكم معنا في معرض النزلاوي</p>
-          <p style={{ marginBottom: '4px' }}>📍 الفيوم - دله شارع نادي قارون بجوار كافيه الثورة</p>
-          <p style={{ margin: 0, display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
-            <span>رقم الحاج: <span style={{ fontWeight: 700, color: C.orange }}>01006172668</span></span>
-            <span>رقم المخزن: <span style={{ fontWeight: 700, color: C.orange }}>01119209017</span></span>
-            <span>المحاسب: <span style={{ fontWeight: 700, color: C.orange }}>01095463383</span></span>
-          </p>
+          <p style={{ fontWeight: 700, color: '#2c3e50', marginBottom: '4px' }}>شكراً لتعاملكم معنا في شركة الحوت</p>
+          <p style={{ margin: 0 }}>شكراً لتعاملكم معنا ▪ للإدارة والاستفسارات يرجى التواصل عبر الواتساب أو الهاتف</p>
         </div>
       </div>
     </div>
