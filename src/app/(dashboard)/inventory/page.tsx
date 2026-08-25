@@ -39,11 +39,11 @@ const TABS = [
   { key: 'stores', label: 'الفروع والمخازن الحالية', icon: '🏪' },
   { key: 'adjustments', label: 'سجل التعديلات', icon: '📊' },
   { key: 'transfers', label: 'التحويلات', icon: '🚛' },
-] as const;
-type TabKey = typeof TABS[number]['key'];
+];
+type TabKey = string;
 
 export default function InventoryPage() {
-  const [tab, setTab] = useState<TabKey>('stock');
+  const [tab, setTab] = useState<string>('stock');
   const [profile, setProfile] = useState<any>(null);
   useEffect(() => { getCurrentUserClient().then(setProfile); }, []);
 
