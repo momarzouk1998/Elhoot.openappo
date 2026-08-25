@@ -1,58 +1,149 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ALL_MODULES, canSeeModule, type CurrentProfile, ROLE_LABELS } from "@/lib/auth";
 import Image from "next/image";
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  Download,
+  Users,
+  Factory,
+  Tags,
+  Package,
+  Landmark,
+  BarChart3,
+  TrendingUp,
+  UserCheck,
+  ChevronRight,
+  ChevronLeft,
+  Menu,
+  X,
+  LogOut,
+  User,
+  Smartphone,
+  AlertTriangle
+} from "lucide-react";
+
+const ICON_MAP: Record<string, React.ComponentType<any>> = {
+  dashboard: LayoutDashboard,
+  sales: ShoppingCart,
+  purchases: Download,
+  customers: Users,
+  suppliers: Factory,
+  products: Tags,
+  inventory: Package,
+  treasury: Landmark,
+  expenses: BarChart3,
+  reports: TrendingUp,
+  users: UserCheck,
+};
 
 export default function Sidebar({ profile }: { profile: CurrentProfile }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [metrics, setMetrics] = useState({ lowStock: 0, todaySales: 0 });
 
-  // أغلق الـ drawer عند تغيير الصفحة
+  // Touch Swipe to Close Drawer
+  const touchStartX = useRef<number | null>(null);
+  const touchCurrentX = useRef<number | null>(null);
+
+  // Load sidebar collapse preference
+  useEffect(() => {
+    const saved = localStorage.getItem("elhoot_sidebar_collapsed");
+    if (saved === "true") setCollapsed(true);
+  }, []);
+
+  // Fetch Live Metrics
+  useEffect(() => {
+    async function fetchMetrics() {
+      try {
+        const res = await fetch("/api/dashboard/sidebar-metrics");
+        const json = await res.json();
+        if (json.ok) setMetrics(json.data);
+      } catch (e) {
+        console.error("Failed to fetch sidebar metrics", e);
+      }
+    }
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Close drawer on path change
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
-  // قفل/فتح scroll الـ body عند فتح الـ drawer
+  // Lock body scroll when mobile drawer is open
   useEffect(() => {
     if (open) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [open]);
 
-  // إغلاق بـ ESC
+  // Close on ESC key
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === "Escape") setOpen(false);
     }
-    if (open) document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    if (open) document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
   async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
     router.refresh();
   }
 
   function handleInstallApp() {
-    if ('serviceWorker' in navigator && 'BeforeInstallPromptEvent' in window) {
+    if ("serviceWorker" in navigator && "BeforeInstallPromptEvent" in window) {
       // @ts-ignore
       const deferredPrompt = window.deferredPrompt;
       if (deferredPrompt) {
         deferredPrompt.prompt();
       } else {
-        alert('📱 التطبيق مثبّت بالفعل أو متاح للتثبيت من إعدادات المتصفح');
+        alert("📱 التطبيق مثبّت بالفعل أو متاح للتثبيت من إعدادات المتصفح");
       }
     } else {
-      alert('📱 يمكنك تثبيت التطبيق من إعدادات المتصفح (المزيد > تثبيت التطبيق)');
+      alert("📱 يمكنك تثبيت التطبيق من إعدادات المتصفح (المزيد > تثبيت التطبيق)");
     }
   }
+
+  const toggleCollapse = () => {
+    const nextState = !collapsed;
+    setCollapsed(nextState);
+    localStorage.setItem("elhoot_sidebar_collapsed", String(nextState));
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchCurrentX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current !== null && touchCurrentX.current !== null) {
+      const deltaX = touchCurrentX.current - touchStartX.current;
+      // In RTL: swiping to the right (positive deltaX) slides drawer away to the right (closes it)
+      if (deltaX > 70) {
+        setOpen(false);
+      }
+    }
+    touchStartX.current = null;
+    touchCurrentX.current = null;
+  };
 
   const visible = ALL_MODULES.filter(m => canSeeModule(profile, m.key));
 
@@ -62,10 +153,10 @@ export default function Sidebar({ profile }: { profile: CurrentProfile }) {
       <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-header-gradient text-white px-3 py-2.5 flex items-center justify-between shadow-lg safe-area-top">
         <button
           onClick={() => setOpen(!open)}
-          className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-2xl shrink-0 order-1"
+          className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white shrink-0 order-1 transition-colors"
           aria-label={open ? "إغلاق القائمة" : "فتح القائمة"}
         >
-          {open ? '✕' : '☰'}
+          {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
         <div className="flex items-center gap-2 min-w-0 order-2">
           <div className="w-9 h-9 rounded-lg bg-white p-0.5 border-2 border-amber-500 shrink-0">
@@ -78,54 +169,61 @@ export default function Sidebar({ profile }: { profile: CurrentProfile }) {
       {/* ====== Mobile drawer (overlay) ====== */}
       {open && (
         <div
-          className="md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+          className="md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-all duration-300"
           onClick={() => setOpen(false)}
         >
           <aside
             onClick={(e) => e.stopPropagation()}
-            className="absolute right-0 top-0 h-full w-[280px] max-w-[85vw] bg-header-gradient text-white shadow-2xl flex flex-col animate-slide-in"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className="absolute right-0 top-0 h-full w-[290px] max-w-[85vw] bg-header-gradient text-white shadow-2xl flex flex-col transition-transform duration-300 ease-out translate-x-0"
           >
-            <div className="flex items-center justify-between p-3 border-b border-white/10">
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
               <div className="flex items-center gap-2 min-w-0">
                 <div className="w-10 h-10 rounded-lg bg-white p-0.5 border-2 border-amber-500 shrink-0">
                   <Image src="/logo.png" alt="شركة الحوت" width={36} height={36} className="rounded object-contain" />
                 </div>
                 <div className="min-w-0">
                   <div className="font-extrabold text-sm leading-tight truncate">شركة الحوت</div>
-                  <div className="text-[10px] text-blue-200 font-medium truncate">{profile.full_name} • {ROLE_LABELS[profile.role]}</div>
+                  <div className="text-[10px] text-blue-200 font-medium truncate">
+                    {profile.full_name} • {ROLE_LABELS[profile.role]}
+                  </div>
                 </div>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-xl"
+                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors"
                 aria-label="إغلاق"
-              >✕</button>
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <SidebarContent visible={visible} pathname={pathname} onNavigate={() => setOpen(false)} />
+              <SidebarContent visible={visible} pathname={pathname} onNavigate={() => setOpen(false)} metrics={metrics} />
             </div>
             <div className="p-3 border-t border-white/10 flex items-center gap-2">
               <Link
                 href="/profile"
                 onClick={() => setOpen(false)}
-                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all shrink-0 flex items-center gap-1"
+                className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all shrink-0 flex items-center justify-center"
                 title="الملف الشخصي"
               >
-                <span>👤</span>
+                <User className="w-4 h-4" />
               </Link>
               <button
                 onClick={handleInstallApp}
-                className="flex-1 py-2 px-2.5 flex items-center justify-center gap-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 text-amber-200 text-xs font-bold transition-all cursor-pointer truncate"
-                title="تثبيت التطبيق"
+                className="flex-1 py-2 px-2.5 flex items-center justify-center gap-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 text-amber-200 text-xs font-bold transition-all cursor-pointer truncate"
               >
-                <span>📱 تثبيت</span>
+                <Smartphone className="w-4 h-4" />
+                <span>تثبيت</span>
               </button>
               <button
                 onClick={logout}
-                className="py-2 px-2.5 flex items-center justify-center gap-1 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-200 text-xs font-bold transition-all cursor-pointer shrink-0"
-                title="تسجيل الخروج"
+                className="py-2 px-2.5 flex items-center justify-center gap-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-200 text-xs font-bold transition-all cursor-pointer shrink-0"
               >
-                <span>🚪 خروج</span>
+                <LogOut className="w-4 h-4" />
+                <span>خروج</span>
               </button>
             </div>
           </aside>
@@ -133,37 +231,104 @@ export default function Sidebar({ profile }: { profile: CurrentProfile }) {
       )}
 
       {/* ====== Desktop sidebar ====== */}
-      <aside className="hidden md:flex flex-col w-64 bg-header-gradient text-white h-screen sticky top-0 shadow-2xl shrink-0">
-        <SidebarContent visible={visible} pathname={pathname} onNavigate={() => {}} profile={profile} />
-        <div className="p-3 border-t border-white/10 flex items-center gap-2">
-          <Link
-            href="/profile"
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all shrink-0 flex items-center gap-1"
-            title="الملف الشخصي"
-          >
-            <span>👤</span>
-          </Link>
+      <aside
+        className={`hidden md:flex flex-col bg-header-gradient text-white h-screen sticky top-0 shadow-2xl shrink-0 transition-all duration-300 ease-in-out ${
+          collapsed ? "w-20" : "w-64"
+        }`}
+      >
+        <div className="relative flex-1 flex flex-col min-h-0">
+          {/* Header */}
+          <div className="p-4 border-b-4 border-amber-500 flex items-center justify-between gap-3 min-w-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-11 h-11 rounded-lg bg-white p-0.5 border-2 border-amber-500 shrink-0 shadow-sm">
+                <Image src="/logo.png" alt="شركة الحوت" width={40} height={40} className="rounded object-contain" />
+              </div>
+              {!collapsed && (
+                <div className="min-w-0 animate-fade-in">
+                  <div className="font-extrabold text-sm leading-tight truncate">شركة الحوت</div>
+                  <div className="text-[10px] text-amber-300 font-bold truncate">
+                    {profile ? profile.full_name : "للأدوات الكهربائية"}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Toggle Button */}
           <button
-            onClick={handleInstallApp}
-            className="flex-1 py-2 px-2.5 flex items-center justify-center gap-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 text-amber-200 text-xs font-bold transition-all cursor-pointer truncate"
-            title="تثبيت التطبيق"
+            onClick={toggleCollapse}
+            className="absolute -left-3 top-16 bg-amber-500 hover:bg-amber-600 text-slate-900 w-6 h-6 rounded-full flex items-center justify-center border border-white/20 shadow-md cursor-pointer transition-all hover:scale-105 z-30"
+            title={collapsed ? "توسيع القائمة" : "طي القائمة"}
           >
-            <span>📱 تثبيت</span>
+            {collapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
-          <button
-            onClick={logout}
-            className="py-2 px-2.5 flex items-center justify-center gap-1 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-200 text-xs font-bold transition-all cursor-pointer shrink-0"
-            title="تسجيل الخروج"
-          >
-            <span>🚪 خروج</span>
-          </button>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <SidebarContent
+              visible={visible}
+              pathname={pathname}
+              onNavigate={() => {}}
+              collapsed={collapsed}
+              metrics={metrics}
+            />
+          </div>
+
+          {/* Footer */}
+          <div className="p-3 border-t border-white/10 flex items-center gap-2">
+            <Link
+              href="/profile"
+              className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all shrink-0 flex items-center justify-center"
+              title="الملف الشخصي"
+            >
+              <User className="w-4 h-4" />
+            </Link>
+            {!collapsed ? (
+              <>
+                <button
+                  onClick={handleInstallApp}
+                  className="flex-1 py-2 px-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 text-amber-200 text-xs font-bold transition-all cursor-pointer truncate flex items-center justify-center gap-1 animate-fade-in"
+                >
+                  <Smartphone className="w-4 h-4" />
+                  <span>تثبيت</span>
+                </button>
+                <button
+                  onClick={logout}
+                  className="py-2 px-2.5 flex items-center justify-center gap-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-200 text-xs font-bold transition-all cursor-pointer shrink-0 animate-fade-in"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>خروج</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={logout}
+                className="flex-1 p-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-200 text-xs font-bold transition-all cursor-pointer flex items-center justify-center"
+                title="تسجيل الخروج"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </aside>
     </>
   );
 }
 
-function SidebarContent({ visible, pathname, onNavigate, profile }: { visible: any[]; pathname: string; onNavigate: () => void; profile?: CurrentProfile }) {
+function SidebarContent({
+  visible,
+  pathname,
+  onNavigate,
+  collapsed = false,
+  metrics,
+}: {
+  visible: any[];
+  pathname: string;
+  onNavigate: () => void;
+  collapsed?: boolean;
+  metrics: { lowStock: number; todaySales: number };
+}) {
   const activeModule = visible.reduce<any | null>((best, module) => {
     if (!module.path) return best;
     if (pathname === module.path) return module;
@@ -174,39 +339,81 @@ function SidebarContent({ visible, pathname, onNavigate, profile }: { visible: a
   }, null);
 
   return (
-    <>
-      <div className="p-4 border-b-4 border-amber-500 flex items-center gap-3 hidden md:flex">
-        <div className="w-12 h-12 rounded-lg bg-white p-0.5 border-2 border-amber-500 shrink-0">
-          <Image src="/logo.png" alt="شركة الحوت" width={44} height={44} className="rounded object-contain" />
-        </div>
-        <div className="min-w-0">
-          <div className="font-extrabold text-base leading-tight">شركة الحوت</div>
-          <div className="text-[11px] text-amber-300 font-medium truncate">
-            {profile ? `${profile.full_name} • ${ROLE_LABELS[profile.role]}` : 'للأدوات الكهربائية'}
-          </div>
-        </div>
-      </div>
-      <nav className="flex-1 overflow-y-auto py-2">
-        {visible.map((m) => {
-          const active = activeModule?.key === m.key;
-          return (
+    <nav className="flex-1 py-3 space-y-1">
+      {visible.map((m) => {
+        const active = activeModule?.key === m.key;
+        const IconComponent = ICON_MAP[m.key] || LayoutDashboard;
+
+        // Custom live badge counts
+        let badgeCount = 0;
+        let badgeColor = "bg-amber-500 text-slate-900";
+        let isAlert = false;
+
+        if (m.key === "inventory" && metrics.lowStock > 0) {
+          badgeCount = metrics.lowStock;
+          badgeColor = "bg-red-500 text-white animate-pulse";
+          isAlert = true;
+        } else if (m.key === "sales" && metrics.todaySales > 0) {
+          badgeCount = metrics.todaySales;
+          badgeColor = "bg-emerald-500 text-white";
+        }
+
+        return (
+          <div key={m.key} className="relative group px-2">
             <Link
-              key={m.key}
               href={m.path}
               onClick={onNavigate}
               prefetch={true}
-              className={`flex items-center gap-3 px-4 py-3 mx-2 my-0.5 rounded-lg text-sm transition-all ${
+              className={`flex items-center rounded-xl text-sm transition-all duration-200 relative overflow-hidden group ${
+                collapsed ? "justify-center p-3" : "gap-3.5 px-4 py-3"
+              } ${
                 active
-                  ? 'bg-amber-500 text-slate-900 shadow-md font-bold'
-                  : 'text-gray-200 hover:bg-white/10 hover:text-white active:bg-white/5'
+                  ? "bg-white/10 text-amber-500 font-extrabold shadow-inner"
+                  : "text-slate-200 hover:bg-white/5 hover:text-white"
               }`}
             >
-              <span className="text-lg shrink-0">{m.icon}</span>
-              <span className="truncate">{m.label}</span>
+              {/* Active Slide-in Indicator (Glow Pill) */}
+              {active && (
+                <span className="absolute right-0 top-0 bottom-0 w-1.5 bg-amber-500 rounded-l-full shadow-[0_0_10px_#f7941d]" />
+              )}
+
+              <IconComponent
+                className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${
+                  active ? "text-amber-500 filter drop-shadow-[0_0_5px_rgba(247,148,29,0.5)]" : "text-slate-300"
+                }`}
+              />
+
+              {!collapsed && (
+                <span className="truncate flex-1 text-[13px]">{m.label}</span>
+              )}
+
+              {/* Badge Counter */}
+              {!collapsed && badgeCount > 0 && (
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${badgeColor}`}>
+                  {isAlert ? <AlertTriangle className="w-3 h-3 inline mr-0.5 -mt-0.5" /> : null}
+                  {badgeCount}
+                </span>
+              )}
+
+              {collapsed && badgeCount > 0 && (
+                <span className="absolute top-1 left-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-slate-900" />
+              )}
             </Link>
-          );
-        })}
-      </nav>
-    </>
+
+            {/* Desktop Collapsed Tooltip */}
+            {collapsed && (
+              <div className="absolute right-22 top-1/2 -translate-y-1/2 bg-slate-900 border border-white/10 text-white text-xs font-bold rounded-lg py-2 px-3 opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 whitespace-nowrap shadow-xl z-50 translate-x-2 group-hover:translate-x-0">
+                <div className="flex items-center gap-2">
+                  <span>{m.label}</span>
+                  {badgeCount > 0 && (
+                    <span className={`text-[9px] px-1.5 py-0.2 rounded-full ${badgeColor}`}>{badgeCount}</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </nav>
   );
 }

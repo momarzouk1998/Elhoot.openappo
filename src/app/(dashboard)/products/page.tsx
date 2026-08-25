@@ -194,6 +194,7 @@ export default function ProductsPage() {
           <table className="w-full text-sm">
             <thead className="bg-slate-100/90 text-slate-700 text-xs font-bold uppercase">
               <tr>
+                <th className="p-3 text-right">صورة</th>
                 <th className="p-3 text-right">الاسم</th>
                 <th className="p-3 text-right">الفئة</th>
                 <th className="p-3 text-right">الوحدة</th>
@@ -209,6 +210,23 @@ export default function ProductsPage() {
                 const isUnderLimit = Number(p.total_stock) <= Number(p.reorder_level);
                 const shortage = Math.max(0, Number(p.reorder_level) - Number(p.total_stock));
 
+                // Unsplash verified electrical photos resolver
+                let imgUrl = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=80&h=80&fit=crop&q=80";
+                const lowerName = p.name.toLowerCase();
+                const lowerCat = (p.category || "").toLowerCase();
+                
+                if (lowerName.includes("لوحة") || lowerCat.includes("لوحات")) {
+                  imgUrl = "https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=80&h=80&fit=crop&q=80";
+                } else if (lowerName.includes("سلك") || lowerName.includes("كابل") || lowerCat.includes("كابلات")) {
+                  imgUrl = "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=80&h=80&fit=crop&q=80";
+                } else if (lowerName.includes("قاطع") || lowerCat.includes("قواطع")) {
+                  imgUrl = "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=80&h=80&fit=crop&q=80";
+                } else if (lowerName.includes("كشاف") || lowerName.includes("لمبة") || lowerCat.includes("إضاءة")) {
+                  imgUrl = "https://images.unsplash.com/photo-1565814329452-e1efa11c5b89?w=80&h=80&fit=crop&q=80";
+                } else if (lowerName.includes("مفتاح") || lowerName.includes("لقمة") || lowerName.includes("شاسيه")) {
+                  imgUrl = "https://images.unsplash.com/photo-1595225476474-87563907a212?w=80&h=80&fit=crop&q=80";
+                }
+
                 return (
                   <tr
                     key={p.id}
@@ -216,6 +234,11 @@ export default function ProductsPage() {
                       isUnderLimit ? 'bg-red-50/50 hover:bg-red-100/60' : 'hover:bg-gray-50'
                     }`}
                   >
+                    <td className="p-3">
+                      <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-200 overflow-hidden relative shadow-sm">
+                        <img src={imgUrl} alt={p.name} className="w-full h-full object-cover" />
+                      </div>
+                    </td>
                     <td className="p-3 font-bold text-slate-900">{p.name}</td>
                     <td className="p-3 text-gray-600 text-xs">{p.category || '—'}</td>
                     <td className="p-3 text-xs">
