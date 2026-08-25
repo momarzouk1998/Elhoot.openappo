@@ -1,5 +1,5 @@
 # ========================================
-# Multi-stage Dockerfile for ELNAZLAWY
+# Multi-stage Dockerfile for EL HOOT
 # Pattern from mazaya-system (2GB server optimized)
 # ========================================
 
@@ -23,8 +23,8 @@ ENV NODE_OPTIONS="--max-old-space-size=1280"
 # Dummy DATABASE_URL so prisma generate + next build succeed without a real DB
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 ENV JWT_SECRET="dummy-secret-for-build"
-ENV NEXT_PUBLIC_SITE_URL="https://elnazlawy.openappo.com"
-ENV NEXT_PUBLIC_APP_NAME="معرض النزلاوي"
+ENV NEXT_PUBLIC_SITE_URL="https://elhoot.openappo.com"
+ENV NEXT_PUBLIC_APP_NAME="شركة الحوت للأدوات الكهربائية"
 RUN npx prisma generate && npm run build
 
 FROM base AS runner
