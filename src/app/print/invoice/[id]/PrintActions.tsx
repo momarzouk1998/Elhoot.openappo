@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PdfDownloadButton } from "@/components/PdfDownloadButton";
 import { InvoiceImageDownloadButton } from "@/components/InvoiceImageDownloadButton";
+import { WhatsAppShareButton } from "@/components/WhatsAppShareButton";
 import CustomerPaymentModal from "@/components/CustomerPaymentModal";
 
 export default function PrintActions({
@@ -16,6 +17,8 @@ export default function PrintActions({
   invoiceId,
   customerId,
   customerName,
+  customerPhone,
+  title = "المستند",
   isCancelled,
 }: {
   autoprint?: boolean;
@@ -28,6 +31,8 @@ export default function PrintActions({
   invoiceId?: string;
   customerId?: string;
   customerName?: string;
+  customerPhone?: string | null;
+  title?: string;
   isCancelled?: boolean;
 }) {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -42,12 +47,10 @@ export default function PrintActions({
   useEffect(() => {
     if (downloadImage) {
       const triggerDownload = async () => {
-        // Wait for rendering to complete
         await new Promise(resolve => setTimeout(resolve, 800));
         const downloadBtn = document.querySelector("button[title*='حفظ الفاتورة كصورة']") as HTMLButtonElement | null;
         if (downloadBtn) {
           downloadBtn.click();
-          // Wait for file conversion and click to download, then close tab
           setTimeout(() => {
             try {
               window.close();
@@ -64,12 +67,10 @@ export default function PrintActions({
   useEffect(() => {
     if (downloadPdf) {
       const triggerDownloadPdf = async () => {
-        // Wait for rendering to complete
         await new Promise(resolve => setTimeout(resolve, 850));
         const pdfBtn = document.getElementById("pdf-download-btn") as HTMLButtonElement | null;
         if (pdfBtn) {
           pdfBtn.click();
-          // Wait for file conversion and click to download, then close tab
           setTimeout(() => {
             try {
               window.close();
@@ -94,27 +95,36 @@ export default function PrintActions({
 
   return (
     <>
-      <div className="no-print max-w-[660px] mx-auto mt-4 mb-8 flex flex-wrap gap-2 justify-center items-center">
+      <div className="no-print max-w-[800px] mx-auto mt-2 mb-6 px-2 flex flex-wrap gap-2 justify-center items-center">
+        {/* زر إرسال واتساب المباشر */}
+        <WhatsAppShareButton
+          targetId={targetId}
+          fileName={fileName}
+          recipientPhone={customerPhone}
+          recipientName={customerName}
+          title={title}
+        />
+
         {/* زر صورة واتساب + نسخ */}
-        <InvoiceImageDownloadButton targetId={targetId} fileName={fileName} label="🖼️ حفظ صورة واتساب" />
+        <InvoiceImageDownloadButton targetId={targetId} fileName={fileName} label="🖼️ صورة" />
+
+        {/* زر PDF */}
+        <PdfDownloadButton targetId={targetId} fileName={fileName} label="📄 PDF" />
 
         {/* زر الطباعة */}
         <button
           onClick={() => window.print()}
-          className="bg-elhoot-500 hover:bg-elhoot-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
+          className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
         >
           <span>🖨️</span>
           <span>طباعة</span>
         </button>
 
-        {/* زر PDF */}
-        <PdfDownloadButton targetId={targetId} fileName={fileName} label="📄 PDF" />
-
         {/* زر تحصيل */}
         {customerId && !isCancelled && (
           <button
             onClick={() => setShowPaymentModal(true)}
-            className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
             title="تسجيل دفعة جديدة من العميل"
           >
             <span>💳</span>
@@ -122,11 +132,11 @@ export default function PrintActions({
           </button>
         )}
 
-        {/* زر إغلاق التبويب */}
+        {/* زر إغلاق / عودة */}
         <button
           onClick={handleClose}
           className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95"
-          title="إغلاق هذا التبويب"
+          title="إغلاق أو العودة"
         >
           <span>✕</span>
           <span>إغلاق</span>
@@ -142,7 +152,6 @@ export default function PrintActions({
           defaultInvoiceId={invoiceId}
           onSuccess={() => {
             setShowPaymentModal(false);
-            // تحديث الصفحة تلقائياً لتنعكس بيانات التحصيل فوراً في الطباعة
             window.location.reload();
           }}
         />
@@ -150,4 +159,3 @@ export default function PrintActions({
     </>
   );
 }
-

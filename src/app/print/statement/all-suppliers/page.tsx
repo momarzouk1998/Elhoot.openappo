@@ -114,10 +114,12 @@ export default async function AllSuppliersStatementPage() {
         backLabel="↩️ العودة للموردين"
         fileName="كشف حساب مجمع - كل الموردين"
         targetId="statement"
+        title="كشف حساب مجمع للموردين"
       />
 
+      <div className="w-full overflow-x-auto pb-4 flex justify-center">
       <div id="statement" style={{
-        maxWidth: '800px', width: '100%', margin: '0 auto', background: C.white,
+        minWidth: '700px', maxWidth: '800px', width: '100%', margin: '0 auto', background: C.white,
         borderRadius: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
         overflow: 'hidden', border: `1px solid ${C.border}`, fontFamily: "'Cairo', 'Segoe UI', sans-serif",
         direction: 'rtl', textAlign: 'right', color: C.text, boxSizing: 'border-box',
@@ -254,6 +256,7 @@ export default async function AllSuppliersStatementPage() {
           <p style={{ fontWeight: 700, color: '#2c3e50', marginBottom: '4px' }}>شكراً لتعاملكم معنا في شركة الحوت</p>
           <p style={{ margin: 0 }}>شكراً لتعاملكم معنا ▪ للإدارة والاستفسارات يرجى التواصل عبر الواتساب أو الهاتف</p>
         </div>
+      </div>
       </div>
     </div>
   );
