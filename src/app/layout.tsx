@@ -24,13 +24,13 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false },
   icons: {
     icon: [
-      { url: "/logo.png", sizes: "32x32", type: "image/png" },
-      { url: "/logo.png", sizes: "192x192", type: "image/png" },
-      { url: "/logo.png", sizes: "512x512", type: "image/png" },
+      { url: "/logo.png?v=20260825", sizes: "32x32", type: "image/png" },
+      { url: "/logo.png?v=20260825", sizes: "192x192", type: "image/png" },
+      { url: "/logo.png?v=20260825", sizes: "512x512", type: "image/png" },
     ],
-    shortcut: ["/logo.png"],
+    shortcut: ["/logo.png?v=20260825"],
     apple: [
-      { url: "/logo.png", sizes: "180x180", type: "image/png" },
+      { url: "/logo.png?v=20260825", sizes: "180x180", type: "image/png" },
     ],
   },
 };
@@ -114,8 +114,9 @@ export default async function RootLayout({
   return (
     <html lang="ar" dir="rtl" className={cairo.variable} suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.ico?v=2" type="image/x-icon" />
-        <link rel="shortcut icon" href="/favicon.ico?v=2" type="image/x-icon" />
+        <link rel="icon" href="/logo.png?v=20260825" type="image/png" sizes="any" />
+        <link rel="shortcut icon" href="/logo.png?v=20260825" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo.png?v=20260825" />
       </head>
       <body className="min-h-screen font-[var(--font-cairo)] flex flex-col">
         {subStatus.status === "expiring_soon" && (

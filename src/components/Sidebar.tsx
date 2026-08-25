@@ -161,11 +161,11 @@ export default function Sidebar({ profile }: { profile: CurrentProfile }) {
         >
           {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
-        <div className="flex items-center gap-2 min-w-0 order-2">
-          <div className="w-9 h-9 rounded-lg bg-white p-0.5 border-2 border-amber-500 shrink-0">
-            <Image src="/logo.png" alt="شركة الحوت" width={32} height={32} className="rounded object-contain" />
+        <div className="flex items-center gap-2.5 min-w-0 order-2">
+          <div className="w-11 h-11 rounded-xl bg-white p-1 border-2 border-amber-500 shrink-0 shadow-sm flex items-center justify-center overflow-hidden">
+            <img src="/logo.png?v=5" alt="شركة الحوت" className="w-full h-full object-contain" />
           </div>
-          <div className="font-bold text-sm truncate">شركة الحوت للأدوات الكهربائية</div>
+          <div className="font-extrabold text-sm truncate">شركة الحوت للأدوات الكهربائية</div>
         </div>
       </header>
 
@@ -183,9 +183,9 @@ export default function Sidebar({ profile }: { profile: CurrentProfile }) {
             className="absolute right-0 top-0 h-full w-[290px] max-w-[85vw] bg-header-gradient text-white shadow-2xl flex flex-col transition-transform duration-300 ease-out translate-x-0"
           >
             <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-10 h-10 rounded-lg bg-white p-0.5 border-2 border-amber-500 shrink-0">
-                  <Image src="/logo.png" alt="شركة الحوت" width={36} height={36} className="rounded object-contain" />
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-11 h-11 rounded-xl bg-white p-1 border-2 border-amber-500 shrink-0 shadow-sm flex items-center justify-center overflow-hidden">
+                  <img src="/logo.png?v=5" alt="شركة الحوت" className="w-full h-full object-contain" />
                 </div>
                 <div className="min-w-0">
                   <div className="font-extrabold text-sm leading-tight truncate">شركة الحوت</div>
@@ -243,8 +243,8 @@ export default function Sidebar({ profile }: { profile: CurrentProfile }) {
           {/* Header */}
           <div className="p-4 border-b-4 border-amber-500 flex items-center justify-between gap-3 min-w-0">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-11 h-11 rounded-lg bg-white p-0.5 border-2 border-amber-500 shrink-0 shadow-sm">
-                <Image src="/logo.png" alt="شركة الحوت" width={40} height={40} className="rounded object-contain" />
+              <div className="w-12 h-12 rounded-xl bg-white p-1 border-2 border-amber-500 shrink-0 shadow-sm flex items-center justify-center overflow-hidden">
+                <img src="/logo.png?v=5" alt="شركة الحوت" className="w-full h-full object-contain" />
               </div>
               {!collapsed && (
                 <div className="min-w-0 animate-fade-in">
