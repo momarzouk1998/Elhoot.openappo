@@ -49,7 +49,6 @@ export default function CustomersPage() {
 
       {tab === 'customers' && <CustomersTab />}
       {tab === 'collections' && <CollectionsTab />}
-      {tab === 'route' && <RouteTab />}
     </div>
   );
 }
