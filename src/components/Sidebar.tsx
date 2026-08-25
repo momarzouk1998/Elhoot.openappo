@@ -339,7 +339,7 @@ function SidebarContent({
   }, null);
 
   return (
-    <nav className="flex-1 py-3 space-y-1">
+    <nav className="flex-1 py-4 space-y-2.5">
       {visible.map((m) => {
         const active = activeModule?.key === m.key;
         const IconComponent = ICON_MAP[m.key] || LayoutDashboard;
@@ -359,13 +359,13 @@ function SidebarContent({
         }
 
         return (
-          <div key={m.key} className="relative group px-2">
+          <div key={m.key} className="relative group px-3">
             <Link
               href={m.path}
               onClick={onNavigate}
               prefetch={true}
-              className={`flex items-center rounded-xl text-sm transition-all duration-200 relative overflow-hidden group ${
-                collapsed ? "justify-center p-3" : "gap-3.5 px-4 py-3"
+              className={`flex items-center rounded-xl transition-all duration-200 relative overflow-hidden group ${
+                collapsed ? "justify-center p-3.5" : "gap-4 px-4.5 py-3.5"
               } ${
                 active
                   ? "bg-white/10 text-amber-500 font-extrabold shadow-inner"
@@ -374,29 +374,29 @@ function SidebarContent({
             >
               {/* Active Slide-in Indicator (Glow Pill) */}
               {active && (
-                <span className="absolute right-0 top-0 bottom-0 w-1.5 bg-amber-500 rounded-l-full shadow-[0_0_10px_#f7941d]" />
+                <span className="absolute right-0 top-0 bottom-0 w-2 bg-amber-500 rounded-l-full shadow-[0_0_10px_#f7941d]" />
               )}
 
               <IconComponent
-                className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${
+                className={`w-[22px] h-[22px] shrink-0 transition-transform group-hover:scale-110 ${
                   active ? "text-amber-500 filter drop-shadow-[0_0_5px_rgba(247,148,29,0.5)]" : "text-slate-300"
                 }`}
               />
 
               {!collapsed && (
-                <span className="truncate flex-1 text-[13px]">{m.label}</span>
+                <span className="truncate flex-1 text-[15px] font-semibold">{m.label}</span>
               )}
 
               {/* Badge Counter */}
               {!collapsed && badgeCount > 0 && (
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${badgeColor}`}>
-                  {isAlert ? <AlertTriangle className="w-3 h-3 inline mr-0.5 -mt-0.5" /> : null}
+                <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${badgeColor}`}>
+                  {isAlert ? <AlertTriangle className="w-3.5 h-3.5 inline mr-0.5 -mt-0.5" /> : null}
                   {badgeCount}
                 </span>
               )}
 
               {collapsed && badgeCount > 0 && (
-                <span className="absolute top-1 left-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-slate-900" />
+                <span className="absolute top-1.5 left-1.5 w-3 h-3 rounded-full bg-red-500 ring-2 ring-slate-900" />
               )}
             </Link>
 

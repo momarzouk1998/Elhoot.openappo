@@ -25,6 +25,7 @@ export default async function DashboardPage() {
     totalCustomersDebt,
     totalSuppliersDebt,
     totalInventoryValue,
+    totalTreasuryBalanceAgg,
   ] = await Promise.all([
     prisma.products.count({ where: { is_active: true } }),
     prisma.customers.count({ where: { is_active: true } }),
@@ -63,10 +64,22 @@ export default async function DashboardPage() {
           WHERE p.is_active = true AND i.current_stock > 0
         `.then(r => Number(r[0]?.total || 0))
       : Promise.resolve(0),
+    prisma.treasuries.aggregate({
+      where: { is_active: true },
+      _sum: { current_balance: true },
+    }),
   ]);
 
   const showCost = canSeeCost(profile);
   const lowStock = Number(lowStockCount[0]?.count || 0);
+
+  const inventoryVal = Number(totalInventoryValue || 0);
+  const custDebt = Number(totalCustomersDebt._sum.balance || 0);
+  const suppDebt = Number(totalSuppliersDebt._sum.balance || 0);
+  const treasuryBal = Number(totalTreasuryBalanceAgg._sum.current_balance || 0);
+
+  // ما تملكه فعلياً = قيمة البضاعة + ديون العملاء + رصيد الخزائن - ديون الموردين
+  const whatYouOwn = inventoryVal + custDebt + treasuryBal - suppDebt;
 
   return (
     <div className="space-y-6">
@@ -89,7 +102,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Row 1 — Sales & Stock Financials */}
+      {/* Row 1 — Sales & Cash */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard
           iconKey="sales"
@@ -117,24 +130,44 @@ export default async function DashboardPage() {
             isCurrency={true}
           />
         )}
-        {showCost && (
+        <KpiCard
+          iconKey="bank"
+          label="رصيد الخزائن"
+          value={treasuryBal}
+          subValue="السيولة المتوفرة بالخزن"
+          color="purple"
+          isCurrency={true}
+        />
+      </div>
+
+      {/* Row 2 — Inventory & What You Own (Working Capital) */}
+      {showCost && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <KpiCard
             iconKey="package"
-            label="قيمة المخزون"
-            value={totalInventoryValue}
-            subValue="بآخر سعر شراء"
+            label="قيمة المخزون (رأس المال في البضاعة)"
+            value={inventoryVal}
+            subValue="مجموع قيمة بضاعتك بآخر سعر شراء"
+            color="blue"
+            isCurrency={true}
+          />
+          <KpiCard
+            iconKey="own"
+            label="ما تملكه فعلياً (صافي رأس المال)"
+            value={whatYouOwn}
+            subValue="المعادلة: قيمة المخزون + ديون العملاء + رصيد الخزائن - ديون الموردين"
             color="green"
             isCurrency={true}
           />
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Row 2 — Debts & Balances */}
+      {/* Row 3 — Debts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <KpiCard
           iconKey="debt"
           label="ديون العملاء (اللي ليا في السوق)"
-          value={Number(totalCustomersDebt._sum.balance || 0)}
+          value={custDebt}
           subValue="مستحقة لك طرف العملاء"
           color="red"
           isCurrency={true}
@@ -142,14 +175,14 @@ export default async function DashboardPage() {
         <KpiCard
           iconKey="bank"
           label="ديون الموردين (اللي عليا للموردين)"
-          value={Number(totalSuppliersDebt._sum.balance || 0)}
+          value={suppDebt}
           subValue="مستحقة للموردين عليك"
           color="yellow"
           isCurrency={true}
         />
       </div>
 
-      {/* Row 3 — System Statistics Counts */}
+      {/* Row 4 — System Statistics Counts */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 pt-2">
         <SmallStat iconKey="tags" label="المنتجات" value={totalProducts} />
         <SmallStat iconKey="users" label="العملاء" value={totalCustomers} />
