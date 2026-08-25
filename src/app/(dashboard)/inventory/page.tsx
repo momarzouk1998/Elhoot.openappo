@@ -47,10 +47,11 @@ export default function InventoryPage() {
   const [profile, setProfile] = useState<any>(null);
   useEffect(() => { getCurrentUserClient().then(setProfile); }, []);
 
-  // لا حاجة لتبويب الفروع بعد الآن، تم دمجه في كاردات المخزون
-  const visibleTabs = profile?.username === 'admin'
-    ? TABS.filter(t => t.key !== 'stores' && t.key !== 'transfers')
-    : TABS;
+  // إخفاء تبويب الفروع والتحويلات عن العميل (إبراهيم) وإبقاؤها فقط للسوبر أدمن
+  const isSuperAdmin = profile?.username === 'superadmin' || profile?.username === 'momarzouk';
+  const visibleTabs = isSuperAdmin
+    ? TABS
+    : TABS.filter(t => t.key !== 'stores' && t.key !== 'transfers');
 
   return (
     <div className="space-y-4">

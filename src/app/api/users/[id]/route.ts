@@ -18,6 +18,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!existing) return NextResponse.json({ ok: false, error: { code: 'NOT_FOUND' } }, { status: 404 });
 
     const data: any = {
+      ...(body.username !== undefined && { username: String(body.username).trim() }),
       ...(body.full_name !== undefined && { full_name: String(body.full_name).trim() }),
       ...(body.phone !== undefined && { phone: body.phone || null }),
       ...(body.whatsapp !== undefined && { whatsapp: body.whatsapp || null }),

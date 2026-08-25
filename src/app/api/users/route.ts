@@ -9,6 +9,18 @@ export async function GET() {
   if (!profile || profile.role !== 'admin') {
     return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN' } }, { status: 403 });
   }
+  // تحديث تلقائي لاسم المستخدم إبراهيم إذا كان admin
+  await prisma.users.updateMany({
+    where: {
+      OR: [
+        { username: 'admin' },
+        { phone: '01002082609' },
+        { full_name: { contains: 'إبراهيم' } }
+      ]
+    },
+    data: { username: 'Ibrahim' }
+  }).catch(() => {});
+
   const users = await prisma.users.findMany({
     orderBy: { full_name: 'asc' },
     select: {
