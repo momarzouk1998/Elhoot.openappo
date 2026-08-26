@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
 import { captureElementToCanvas } from "@/lib/html2canvas-safe";
@@ -208,33 +208,66 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
                 </thead>
                 <tbody>
                   {entries && entries.length > 0 ? (
-                    entries.map((e: any, idx: number) => (
-                      <tr
-                        key={idx}
-                        style={{ borderTop: "1px solid #f1f5f9", backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}
-                      >
-                        <td style={{ padding: "10px", textAlign: "center", color: "#94a3b8", fontWeight: "bold" }}>{idx + 1}</td>
-                        <td style={{ padding: "10px", color: "#475569", whiteSpace: "nowrap", fontFamily: "monospace" }}>{formatDate(e.date)}</td>
-                        <td style={{ padding: "10px", fontWeight: "bold", color: "#1e293b" }}>
-                          <span>{e.label}</span>
-                          {e.items && e.items.length > 0 && (
-                            <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "normal", marginRight: "6px" }}>
-                              ({e.items.length} أصناف)
-                            </span>
+                    entries.map((e: any, idx: number) => {
+                      const hasItems = e.items && e.items.length > 0;
+                      return (
+                        <React.Fragment key={idx}>
+                          <tr
+                            style={{ borderTop: "1px solid #f1f5f9", backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}
+                          >
+                            <td style={{ padding: "8px 10px", textAlign: "center", color: "#94a3b8", fontWeight: "bold" }}>{idx + 1}</td>
+                            <td style={{ padding: "8px 10px", color: "#475569", whiteSpace: "nowrap", fontFamily: "monospace" }}>{formatDate(e.date)}</td>
+                            <td style={{ padding: "8px 10px", fontWeight: "bold", color: "#1e293b" }}>
+                              <span>{e.label}</span>
+                              {hasItems && (
+                                <span style={{ fontSize: "10px", color: "#0284c7", backgroundColor: "#e0f2fe", padding: "2px 6px", borderRadius: "6px", marginRight: "6px", fontWeight: 800 }}>
+                                  📦 {e.items.length} أصناف
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ padding: "8px 10px", textAlign: "center", color: "#0369a1", fontWeight: "bold", whiteSpace: "nowrap", fontFamily: "monospace" }}>{e.ref}</td>
+                            <td style={{ padding: "8px 10px", textAlign: "left", color: "#dc2626", fontWeight: "bold", fontFamily: "monospace" }}>
+                              {e.debit > 0 ? `${formatEGP(e.debit)} ج` : "—"}
+                            </td>
+                            <td style={{ padding: "8px 10px", textAlign: "left", color: "#059669", fontWeight: "bold", fontFamily: "monospace" }}>
+                              {e.credit > 0 ? `${formatEGP(e.credit)} ج` : "—"}
+                            </td>
+                            <td style={{ padding: "8px 10px", textAlign: "left", color: "#0f172a", fontWeight: 900, fontFamily: "monospace", backgroundColor: "#f1f5f9" }}>
+                              {formatEGP(e.balance)} ج
+                            </td>
+                          </tr>
+                          {/* Nested Items Details Breakdown */}
+                          {hasItems && (
+                            <tr style={{ backgroundColor: "#f8fafc" }}>
+                              <td colSpan={7} style={{ padding: "2px 10px 10px 10px", borderBottom: "1px solid #e2e8f0" }}>
+                                <div style={{ backgroundColor: "#ffffff", borderRadius: "8px", border: "1px solid #cbd5e1", padding: "6px 10px", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
+                                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+                                    <thead>
+                                      <tr style={{ backgroundColor: "#f1f5f9", color: "#475569", fontWeight: "bold", borderBottom: "1px solid #cbd5e1" }}>
+                                        <th style={{ padding: "4px 8px", textAlign: "right" }}>الصنف</th>
+                                        <th style={{ padding: "4px 8px", textAlign: "center", width: "15%" }}>الكمية</th>
+                                        <th style={{ padding: "4px 8px", textAlign: "left", width: "18%" }}>السعر</th>
+                                        <th style={{ padding: "4px 8px", textAlign: "left", width: "20%" }}>الإجمالي</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {e.items.map((it: any, itIdx: number) => (
+                                        <tr key={itIdx} style={{ borderBottom: itIdx < e.items.length - 1 ? "1px solid #f1f5f9" : "none" }}>
+                                          <td style={{ padding: "4px 8px", fontWeight: "bold", color: "#334155" }}>{it.product_name}</td>
+                                          <td style={{ padding: "4px 8px", textAlign: "center", fontFamily: "monospace", fontWeight: 900, color: "#0f172a" }}>{it.quantity}</td>
+                                          <td style={{ padding: "4px 8px", textAlign: "left", fontFamily: "monospace", color: "#64748b" }}>{formatEGP(it.unit_price)} ج</td>
+                                          <td style={{ padding: "4px 8px", textAlign: "left", fontFamily: "monospace", fontWeight: "bold", color: "#0f172a" }}>{formatEGP(it.line_total)} ج</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
                           )}
-                        </td>
-                        <td style={{ padding: "10px", textAlign: "center", color: "#0369a1", fontWeight: "bold", whiteSpace: "nowrap", fontFamily: "monospace" }}>{e.ref}</td>
-                        <td style={{ padding: "10px", textAlign: "left", color: "#dc2626", fontWeight: "bold", fontFamily: "monospace" }}>
-                          {e.debit > 0 ? `${formatEGP(e.debit)} ج` : "—"}
-                        </td>
-                        <td style={{ padding: "10px", textAlign: "left", color: "#059669", fontWeight: "bold", fontFamily: "monospace" }}>
-                          {e.credit > 0 ? `${formatEGP(e.credit)} ج` : "—"}
-                        </td>
-                        <td style={{ padding: "10px", textAlign: "left", color: "#0f172a", fontWeight: 900, fontFamily: "monospace", backgroundColor: "#f1f5f9" }}>
-                          {formatEGP(e.balance)} ج
-                        </td>
-                      </tr>
-                    ))
+                        </React.Fragment>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan={7} style={{ padding: "24px", textAlign: "center", color: "#94a3b8", fontWeight: "bold" }}>
