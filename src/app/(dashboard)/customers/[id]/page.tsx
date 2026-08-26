@@ -247,6 +247,13 @@ function StatementSection({ customerId, balance, onCollect, onCustomerChanged }:
                   <td className="p-3">
                     <div className="flex gap-1 justify-center">
                       <button
+                        onClick={() => window.open(`/print/payment/customer/${p.id}`, '_blank')}
+                        className="text-xs px-2 py-1 bg-emerald-100 text-emerald-800 rounded hover:bg-emerald-200 font-bold"
+                        title="طباعة / مشاركة إيصال التحصيل"
+                      >
+                        🖨️ إيصال
+                      </button>
+                      <button
                         onClick={() => editPayment(p)}
                         className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                         title="تعديل"

@@ -77,7 +77,7 @@ export default function CustomerPaymentModal({
       return;
     }
 
-    const { error } = await mutate("POST", "/api/payments/customers", {
+    const res = await mutate("POST", "/api/payments/customers", {
       customer_id: customerId,
       amount: numAmount,
       payment_method: paymentMethod,
@@ -87,12 +87,18 @@ export default function CustomerPaymentModal({
       notes: notes || (defaultInvoiceId ? `تحصيل مرتبط بفاتورة` : null),
     });
 
-    if (error) {
-      alert("❌ " + error);
+    if (res.error) {
+      alert("❌ " + res.error);
       return;
     }
 
-    alert(`✅ تم تسجيل سند التحصيل بمبلغ ${formatEGP(numAmount)} ج بنجاح وإيداعه في الخزينة`);
+    const createdPaymentId = (res.data as any)?.id;
+    if (confirm(`✅ تم تسجيل سند التحصيل بمبلغ ${formatEGP(numAmount)} ج بنجاح وإيداعه في الخزينة.\n\nهل تريد طباعة / مشاركة إيصال التحصيل عبر الواتساب؟`)) {
+      if (createdPaymentId) {
+        window.open(`/print/payment/customer/${createdPaymentId}`, '_blank');
+      }
+    }
+
     if (onSuccess) onSuccess();
     onClose();
   }

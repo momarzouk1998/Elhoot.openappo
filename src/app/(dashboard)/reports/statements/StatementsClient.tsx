@@ -4,6 +4,9 @@ import { formatEGP } from "@/lib/format";
 import { useState } from "react";
 import Link from "next/link";
 
+import { WhatsAppShareButton } from "@/components/WhatsAppShareButton";
+import { InvoiceImageDownloadButton } from "@/components/InvoiceImageDownloadButton";
+
 interface Party {
   id: string; name: string; phone: string | null; balance: number; opening_balance: number; address?: string | null;
 }
@@ -61,17 +64,31 @@ export function StatementsClient({ type: initialType, parties, selected, transac
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-slate-650">📋 كشوف الحسابات</h1>
-          <p className="text-sm text-gray-500">كشف حساب تفصيلي مع رصيد تراكمي + تحميل PDF</p>
+          <p className="text-sm text-gray-500">كشف حساب تفصيلي مع رصيد تراكمي + تصدير صورة وواتساب</p>
         </div>
-        <div className="flex gap-2 no-print flex-wrap">
+        <div className="flex gap-2 no-print flex-wrap items-center">
           {selected && (
-            <Link
-              href={`/print/statement/${type}/${selected.id}`}
-              target="_blank"
-              className="bg-button-orange text-white px-4 py-2 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity"
-            >
-              📄 كشف حساب PDF
-            </Link>
+            <>
+              <WhatsAppShareButton
+                targetId="statement-container"
+                fileName={`كشف_حساب_${selected.name}`}
+                recipientPhone={selected.phone}
+                recipientName={selected.name}
+                title={`كشف حساب ${type === 'customer' ? 'العميل' : 'المورد'}`}
+              />
+              <InvoiceImageDownloadButton
+                targetId="statement-container"
+                fileName={`كشف_حساب_${selected.name}`}
+                label="🖼️ صورة"
+              />
+              <Link
+                href={`/print/statement/${type}/${selected.id}`}
+                target="_blank"
+                className="bg-button-orange text-white px-4 py-2 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity flex items-center gap-1"
+              >
+                📄 الكشف المطبوع + تفاصيل الأصناف
+              </Link>
+            </>
           )}
           {selected && (
             <button onClick={() => window.print()} className="btn-secondary text-sm">🖨️ طباعة</button>
@@ -142,9 +159,9 @@ export function StatementsClient({ type: initialType, parties, selected, transac
       </div>
 
       {selected && (
-        <>
+        <div id="statement-container" className="space-y-4 bg-white p-4 rounded-2xl border border-gray-200">
           {/* بيانات الطرف */}
-          <div className="card">
+          <div className="card border-0 shadow-none bg-gray-50">
             <div className="flex items-start justify-between flex-wrap gap-3">
               <div>
                 <h2 className="text-xl font-bold">{selected.name}</h2>
@@ -231,7 +248,7 @@ export function StatementsClient({ type: initialType, parties, selected, transac
           {transactions.length === 0 && (
             <div className="card text-center py-12 text-gray-400">لا توجد حركات لهذا الطرف</div>
           )}
-        </>
+        </div>
       )}
 
       {!selected && (

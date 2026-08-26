@@ -67,13 +67,22 @@ export default function CustomerPaymentsPage() {
                   <td className="p-3 font-mono font-bold text-green-700">{formatEGP(p.amount)}</td>
                   <td className="p-3 text-xs text-gray-500">{p.notes || '—'}</td>
                   <td className="p-3 text-center">
-                    <button
-                      onClick={() => handleDelete(p)}
-                      className="text-xs px-2 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-bold"
-                      title="حذف سند التحصيل وإرجاع المبلغ لرصيد العميل"
-                    >
-                      🗑️ حذف
-                    </button>
+                    <div className="flex gap-1 justify-center">
+                      <button
+                        onClick={() => window.open(`/print/payment/customer/${p.id}`, '_blank')}
+                        className="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded font-bold"
+                        title="طباعة / مشاركة إيصال التحصيل"
+                      >
+                        🖨️ إيصال
+                      </button>
+                      <button
+                        onClick={() => handleDelete(p)}
+                        className="text-xs px-2 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-bold"
+                        title="حذف سند التحصيل وإرجاع المبلغ لرصيد العميل"
+                      >
+                        🗑️ حذف
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -104,8 +113,12 @@ function Form({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }
 
   async function save() {
     if (!f.customer_id || !f.treasury_id || f.amount <= 0) { alert('❌ أكمل البيانات'); return; }
-    const { error } = await mutate('POST', '/api/payments/customers', f);
-    if (error) { alert('❌ ' + error); return; }
+    const res = await mutate('POST', '/api/payments/customers', f);
+    if (res.error) { alert('❌ ' + res.error); return; }
+    const createdId = (res.data as any)?.id;
+    if (confirm(`✅ تم تسجيل سند التحصيل بنجاح.\n\nهل تريد طباعة / مشاركة إيصال التحصيل عبر الواتساب؟`)) {
+      if (createdId) window.open(`/print/payment/customer/${createdId}`, '_blank');
+    }
     onSaved();
   }
 

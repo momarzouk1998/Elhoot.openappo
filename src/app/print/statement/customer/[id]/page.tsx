@@ -296,32 +296,81 @@ export default async function CustomerStatementPage({ params }: { params: Promis
               {entries.map((e, i) => {
                 const bgColor = e.type === 'opening' ? '#f1f5f9' : i % 2 === 0 ? C.white : C.lightBg;
                 const balColor = e.balance > 0.01 ? C.danger : e.balance < -0.01 ? C.success : C.muted;
+                const hasItems = e.items && e.items.length > 0;
+
                 return (
-                  <tr key={i} style={{ backgroundColor: bgColor, fontWeight: e.type === 'opening' ? 700 : 400 }}>
-                    <td style={{ padding: '9px', border: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>
-                      {e.date.getFullYear() === 1970 ? '—' : formatDate(e.date)}
-                    </td>
-                    <td style={{ padding: '9px', border: `1px solid ${C.border}` }}>
-                      <span style={{
-                        backgroundColor: e.type === 'invoice' ? '#dbeafe' : e.type === 'return' ? '#ffedd5' : e.type === 'payment' ? '#dcfce7' : '#f1f5f9',
-                        color: e.type === 'invoice' ? '#1e40af' : e.type === 'return' ? '#c2410c' : e.type === 'payment' ? '#166534' : C.gray,
-                        padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 700,
-                      }}>
-                        {e.type === 'invoice' ? '🛒 بيع' : e.type === 'return' ? '↩️ مرتجع' : e.type === 'payment' ? '💰 تحصيل' : '📂 افتتاحي'}
-                      </span>
-                      <span style={{ marginRight: '6px', fontWeight: 600 }}>{e.label}</span>
-                    </td>
-                    <td style={{ padding: '9px', border: `1px solid ${C.border}`, fontFamily: 'monospace', color: C.muted }}>{e.ref}</td>
-                    <td style={{ padding: '9px', textAlign: 'center', fontWeight: 700, color: e.debit > 0 ? C.danger : C.muted, border: `1px solid ${C.border}` }}>
-                      {e.debit > 0 ? n(e.debit) : '—'}
-                    </td>
-                    <td style={{ padding: '9px', textAlign: 'center', fontWeight: 700, color: e.credit > 0 ? C.success : C.muted, border: `1px solid ${C.border}` }}>
-                      {e.credit > 0 ? n(e.credit) : '—'}
-                    </td>
-                    <td style={{ padding: '9px', textAlign: 'center', fontWeight: 800, color: balColor, border: `1px solid ${C.border}`, fontFamily: 'monospace' }}>
-                      {n(e.balance)}
-                    </td>
-                  </tr>
+                  <tbody key={i} style={{ borderBottom: `1px solid ${C.border}` }}>
+                    <tr style={{ backgroundColor: bgColor, fontWeight: e.type === 'opening' ? 700 : 400 }}>
+                      <td style={{ padding: '9px', border: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>
+                        {e.date.getFullYear() === 1970 ? '—' : formatDate(e.date)}
+                      </td>
+                      <td style={{ padding: '9px', border: `1px solid ${C.border}` }}>
+                        <span style={{
+                          backgroundColor: e.type === 'invoice' ? '#dbeafe' : e.type === 'return' ? '#ffedd5' : e.type === 'payment' ? '#dcfce7' : '#f1f5f9',
+                          color: e.type === 'invoice' ? '#1e40af' : e.type === 'return' ? '#c2410c' : e.type === 'payment' ? '#166534' : C.gray,
+                          padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 700,
+                        }}>
+                          {e.type === 'invoice' ? '🛒 بيع' : e.type === 'return' ? '↩️ مرتجع' : e.type === 'payment' ? '💰 تحصيل' : '📂 افتتاحي'}
+                        </span>
+                        <span style={{ marginRight: '6px', fontWeight: 600 }}>{e.label}</span>
+                      </td>
+                      <td style={{ padding: '9px', border: `1px solid ${C.border}`, fontFamily: 'monospace', color: C.muted }}>{e.ref}</td>
+                      <td style={{ padding: '9px', textAlign: 'center', fontWeight: 700, color: e.debit > 0 ? C.danger : C.muted, border: `1px solid ${C.border}` }}>
+                        {e.debit > 0 ? n(e.debit) : '—'}
+                      </td>
+                      <td style={{ padding: '9px', textAlign: 'center', fontWeight: 700, color: e.credit > 0 ? C.success : C.muted, border: `1px solid ${C.border}` }}>
+                        {e.credit > 0 ? n(e.credit) : '—'}
+                      </td>
+                      <td style={{ padding: '9px', textAlign: 'center', fontWeight: 800, color: balColor, border: `1px solid ${C.border}`, fontFamily: 'monospace' }}>
+                        {n(e.balance)}
+                      </td>
+                    </tr>
+
+                    {/* جدول تفاصيل الأصناف المدمج */}
+                    {hasItems && (
+                      <tr style={{ backgroundColor: '#fafafa' }}>
+                        <td colSpan={6} style={{ padding: '6px 12px 10px 12px', border: `1px solid ${C.border}` }}>
+                          <div style={{
+                            backgroundColor: '#ffffff',
+                            borderRadius: '8px',
+                            border: `1.5px solid #cbd5e1`,
+                            padding: '6px 10px',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                          }}>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: C.gray, marginBottom: '5px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span>📦 تفاصيل الأصناف (عدد: {e.items!.length}):</span>
+                            </div>
+                            <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
+                              <thead>
+                                <tr style={{ backgroundColor: '#f1f5f9', color: C.gray, fontSize: '0.75rem', borderBottom: '1px solid #cbd5e1' }}>
+                                  <th style={{ padding: '4px 8px', textAlign: 'right' }}>اسم الصنف / البيان</th>
+                                  <th style={{ padding: '4px 8px', textAlign: 'center', width: '65px' }}>الكمية</th>
+                                  <th style={{ padding: '4px 8px', textAlign: 'left', width: '95px' }}>السعر</th>
+                                  <th style={{ padding: '4px 8px', textAlign: 'left', width: '110px' }}>الإجمالي</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {e.items!.map((it, idx) => (
+                                  <tr key={idx} style={{ borderBottom: idx < e.items!.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                                    <td style={{ padding: '4px 8px', fontWeight: 700, color: C.text }}>{it.product_name}</td>
+                                    <td style={{ padding: '4px 8px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 900, color: C.darkGray }}>
+                                      {it.quantity}
+                                    </td>
+                                    <td style={{ padding: '4px 8px', textAlign: 'left', fontFamily: 'monospace' }}>
+                                      {n(it.unit_price)}
+                                    </td>
+                                    <td style={{ padding: '4px 8px', textAlign: 'left', fontFamily: 'monospace', fontWeight: 900, color: C.gray }}>
+                                      {n(it.line_total)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
                 );
               })}
             </tbody>
