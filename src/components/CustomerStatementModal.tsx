@@ -60,26 +60,24 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
         try {
           const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
           if (blob) {
-            const file = new File([blob as BlobPart], `كشف_حساب_${customerName}.png`, { type: "image/png" });
+            const file = new File([blob as BlobPart], `statement_${customerId.slice(0, 8)}.png`, { type: "image/png" });
             if (typeof (navigator as any).canShare === "function" && (navigator as any).canShare({ files: [file] })) {
               await navigator.share({
                 files: [file],
                 title: "كشف حساب شركة الحوت",
-                text: receiptText,
               });
               return;
             }
-          }
 
-          // Fallback to native text share sheet
-          await navigator.share({
-            title: "كشف حساب شركة الحوت",
-            text: receiptText,
-          });
-          return;
+            // Direct share without canShare check
+            await navigator.share({
+              files: [file],
+            });
+            return;
+          }
         } catch (shareErr: any) {
           if (shareErr?.name === "AbortError") return;
-          console.warn("Native share error, falling back to direct app link:", shareErr);
+          console.warn("Native share error, falling back to download:", shareErr);
         }
       }
 
@@ -89,10 +87,7 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
       link.href = canvas.toDataURL("image/png");
       link.click();
 
-      const directAppUrl = formattedPhone
-        ? `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(receiptText)}`
-        : `whatsapp://send?text=${encodeURIComponent(receiptText)}`;
-      window.location.href = directAppUrl;
+      window.location.href = `whatsapp://send?text=${encodeURIComponent(receiptText)}`;
     } catch (err) {
       console.error(err);
       alert("❌ حدث خطأ أثناء تجهيز كشف الحساب للمشاركة");

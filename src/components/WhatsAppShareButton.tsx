@@ -46,26 +46,24 @@ export function WhatsAppShareButton({
         try {
           const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
           if (blob) {
-            const file = new File([blob as BlobPart], `${fileName}.png`, { type: "image/png" });
+            const file = new File([blob as BlobPart], `report_${Date.now()}.png`, { type: "image/png" });
             if (typeof (navigator as any).canShare === "function" && (navigator as any).canShare({ files: [file] })) {
               await navigator.share({
                 files: [file],
                 title: `${title} - شركة الحوت`,
-                text: shareText,
               });
               return;
             }
-          }
 
-          // Fallback to native text share
-          await navigator.share({
-            title: `${title} - شركة الحوت`,
-            text: shareText,
-          });
-          return;
+            // Direct share without canShare check
+            await navigator.share({
+              files: [file],
+            });
+            return;
+          }
         } catch (shareErr: any) {
           if (shareErr?.name === "AbortError") return;
-          console.warn("Native share failed, fallback to direct download & WhatsApp link", shareErr);
+          console.warn("Native share error, falling back to download:", shareErr);
         }
       }
 
@@ -75,10 +73,7 @@ export function WhatsAppShareButton({
       link.href = canvas.toDataURL("image/png");
       link.click();
 
-      const directAppUrl = formattedPhone
-        ? `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(shareText)}`
-        : `whatsapp://send?text=${encodeURIComponent(shareText)}`;
-      window.location.href = directAppUrl;
+      window.location.href = `whatsapp://send?text=${encodeURIComponent(shareText)}`;
     } catch (err) {
       console.error(err);
       alert("❌ حدث خطأ أثناء إرسال كشف الحساب عبر واتساب");
