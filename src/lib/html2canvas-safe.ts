@@ -1,8 +1,7 @@
 /**
  * Safe wrapper around html2canvas.
- * Inlines computed styles on the target element and its descendants,
- * then removes all global stylesheets and style tags containing oklch
- * from the clone so html2canvas NEVER parses any Tailwind v4 oklch rules.
+ * Uses an offscreen 2D canvas context to accurately convert any modern CSS color functions
+ * (oklch, oklab, color()) to standard rgb() / rgba() values that html2canvas supports.
  */
 
 const ESSENTIAL_PROPS = [
@@ -62,6 +61,22 @@ const ESSENTIAL_PROPS = [
   "border-collapse",
 ] as const;
 
+function resolveColorToRgb(str: string, ctx: CanvasRenderingContext2D | null): string {
+  if (!str || typeof str !== "string") return str;
+  if (!str.includes("oklch") && !str.includes("color(") && !str.includes("oklab")) return str;
+  if (!ctx) return str;
+
+  return str.replace(/(oklch|oklab|color)\([^)]+\)/gi, (match) => {
+    try {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = match;
+      return ctx.fillStyle; // Native browser canvas resolves to exact rgb(r, g, b)
+    } catch {
+      return "rgb(15, 65, 133)";
+    }
+  });
+}
+
 export async function captureElementToCanvas(
   element: HTMLElement,
   options: {
@@ -80,7 +95,10 @@ export async function captureElementToCanvas(
     scrollX: 0,
     scrollY: 0,
     onclone: (clonedDoc, clonedElement) => {
-      // 1. Walk original and cloned elements, copying all computed styles inline as standard values
+      const helperCanvas = clonedDoc.createElement("canvas");
+      const ctx = helperCanvas.getContext("2d");
+
+      // 1. Walk original and cloned elements, copying exact computed styles inline
       try {
         const liveElements = [element, ...Array.from(element.querySelectorAll("*"))] as HTMLElement[];
         const cloneElements = [clonedElement, ...Array.from(clonedElement.querySelectorAll("*"))] as HTMLElement[];
@@ -94,9 +112,9 @@ export async function captureElementToCanvas(
           for (const prop of ESSENTIAL_PROPS) {
             let val = computed.getPropertyValue(prop);
             if (!val || val === "initial" || val === "inherit") continue;
-            // Clean any oklch or color() in computed style values
+            // Clean any oklch using true canvas context translation
             if (val.includes("oklch") || val.includes("color(") || val.includes("oklab")) {
-              val = val.replace(/(oklch|oklab|color)\([^)]+\)/gi, "rgb(15, 65, 133)");
+              val = resolveColorToRgb(val, ctx);
             }
             clone.style.setProperty(prop, val, "important");
           }
@@ -105,7 +123,7 @@ export async function captureElementToCanvas(
         console.warn("Computed style inlining warning:", err);
       }
 
-      // 2. Remove all external stylesheets and style tags so html2canvas NEVER parses Tailwind oklch rules
+      // 2. Remove external stylesheets and any style tags with oklch to avoid html2canvas parser errors
       try {
         clonedDoc.querySelectorAll('link[rel="stylesheet"]').forEach((link) => link.remove());
         clonedDoc.querySelectorAll("style").forEach((style) => {

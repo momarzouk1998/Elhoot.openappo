@@ -42,7 +42,7 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
   const payDate = payment.payment_date || payment.created_at;
   const customerName = payment.customer?.name || "العميل المحترم";
 
-  // ─── Direct WhatsApp Share Handler: Native Image Share (Open Contact Chooser) ──
+  // ─── Direct WhatsApp Share Handler: Native Image Share ────────────────────────
   const handleShareWhatsapp = async () => {
     if (sharingWhatsapp) return;
     const element = document.getElementById("receipt-sheet-" + paymentId);
@@ -128,82 +128,82 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
         <div className="p-3 sm:p-5 overflow-y-auto max-h-[80vh]">
           <div
             id={"receipt-sheet-" + paymentId}
-            className="bg-white rounded-xl border border-slate-200 p-4 space-y-3 text-right"
-            style={{ direction: "rtl", fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif" }}
+            className="rounded-xl p-4 space-y-3 text-right"
+            style={{ direction: "rtl", fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif", backgroundColor: "#ffffff", border: "1px solid #e2e8f0" }}
           >
             {/* Header */}
-            <div className="pb-3 border-b-2 border-slate-100">
+            <div style={{ paddingBottom: "12px", borderBottom: "2px solid #f1f5f9" }}>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-12 h-12 bg-white rounded-xl p-1 border-2 border-emerald-500 shrink-0 shadow-sm flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-xl p-1 shrink-0 flex items-center justify-center" style={{ backgroundColor: "#ffffff", border: "2px solid #10b981", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
                     <img src="/logo.png" alt="شركة الحوت" className="w-full h-full object-contain" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-black text-slate-900 text-base leading-tight">شركة الحوت</h3>
-                    <p className="text-xs text-slate-500 font-bold">للأدوات واللوحات الكهربائية</p>
+                    <h3 className="font-black text-base leading-tight" style={{ color: "#0f172a" }}>شركة الحوت</h3>
+                    <p className="text-xs font-bold" style={{ color: "#64748b" }}>للأدوات واللوحات الكهربائية</p>
                   </div>
                 </div>
                 <div className="text-left shrink-0">
-                  <span className="inline-block bg-emerald-600 text-white text-xs font-black px-3 py-1 rounded-full shadow-sm">
+                  <span style={{ backgroundColor: "#059669", color: "#ffffff", fontSize: "11px", fontWeight: 800, padding: "4px 10px", borderRadius: "9999px", whiteSpace: "nowrap", display: "inline-block" }}>
                     إيصال تحصيل نقدية
                   </span>
-                  <p className="text-[11px] text-slate-400 font-bold mt-1">{formatDate(payDate)}</p>
+                  <p className="font-bold mt-1" style={{ color: "#94a3b8", fontSize: "11px" }}>{formatDate(payDate)}</p>
                 </div>
               </div>
             </div>
 
             {/* Customer info */}
-            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center justify-between text-xs">
+            <div className="rounded-xl p-3 flex items-center justify-between text-xs" style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
               <div>
-                <span className="text-slate-400 font-medium">العميل: </span>
-                <strong className="text-slate-900 text-sm font-black">{payment.customer?.name || "عميل عام"}</strong>
+                <span style={{ color: "#94a3b8", fontWeight: 500 }}>العميل: </span>
+                <strong className="text-sm font-black mr-1" style={{ color: "#0f172a" }}>{payment.customer?.name || "عميل عام"}</strong>
               </div>
               {payment.customer?.phone && (
-                <span className="text-slate-600 font-mono text-xs bg-white px-2 py-0.5 rounded border border-slate-200">
+                <span className="font-mono text-xs px-2 py-0.5 rounded" style={{ backgroundColor: "#ffffff", color: "#475569", border: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>
                   📞 {payment.customer.phone}
                 </span>
               )}
             </div>
 
             {/* Amount paid box */}
-            <div className="bg-emerald-50 border-2 border-emerald-500 rounded-xl p-3.5 text-center">
-              <p className="text-xs text-emerald-800 font-bold mb-1">المبلغ المحصل</p>
-              <p className="text-2xl font-black text-emerald-700 font-mono">
+            <div className="rounded-xl p-3.5 text-center" style={{ backgroundColor: "#ecfdf5", border: "2px solid #10b981" }}>
+              <p className="text-xs font-bold mb-1" style={{ color: "#065f46" }}>المبلغ المحصل</p>
+              <p className="text-2xl font-black font-mono" style={{ color: "#047857" }}>
                 {formatEGP(paid)} <span className="text-sm font-bold">ج.م</span>
               </p>
               {payment.payment_method && (
-                <p className="text-[11px] text-emerald-600 mt-1 font-semibold">طريقة الدفع: {payment.payment_method}</p>
+                <p className="text-[11px] mt-1 font-semibold" style={{ color: "#059669" }}>طريقة الدفع: {payment.payment_method}</p>
               )}
             </div>
 
             {/* Balances summary */}
             <div className="grid grid-cols-2 gap-2 text-center text-xs">
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
-                <p className="text-slate-400 text-[11px] mb-0.5 font-semibold">الحساب السابق</p>
-                <p className="font-extrabold text-slate-700 font-mono text-sm">{formatEGP(prevBal)} ج</p>
+              <div className="rounded-xl p-2.5" style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                <p className="text-[11px] mb-0.5 font-semibold" style={{ color: "#64748b" }}>الحساب السابق</p>
+                <p className="font-extrabold font-mono text-sm" style={{ color: "#334155" }}>{formatEGP(prevBal)} ج</p>
               </div>
-              <div className="bg-sky-50 border-2 border-sky-500 rounded-xl p-2.5">
-                <p className="text-sky-800 text-[11px] mb-0.5 font-black">المتبقي النهائي</p>
-                <p className="font-black text-sky-900 font-mono text-sm">{formatEGP(newBal)} ج</p>
+              <div className="rounded-xl p-2.5" style={{ backgroundColor: "#f0f9ff", border: "2px solid #0284c7" }}>
+                <p className="text-[11px] mb-0.5 font-black" style={{ color: "#0369a1" }}>المتبقي النهائي</p>
+                <p className="font-black font-mono text-sm" style={{ color: "#0c4a6e" }}>{formatEGP(newBal)} ج</p>
               </div>
             </div>
 
             {/* Treasury info */}
             {payment.treasury && (
-              <div className="text-xs text-slate-400 flex items-center justify-between px-1">
+              <div className="text-xs flex items-center justify-between px-1" style={{ color: "#94a3b8" }}>
                 <span>الخزينة المودع بها:</span>
-                <strong className="text-slate-700 font-bold">{payment.treasury.name}</strong>
+                <strong style={{ color: "#334155" }}>{payment.treasury.name}</strong>
               </div>
             )}
 
             {payment.notes && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-800 font-medium">
+              <div className="rounded-xl p-2.5 text-xs font-medium" style={{ backgroundColor: "#fffbeb", border: "1px solid #fde68a", color: "#92400e" }}>
                 <strong>ملاحظة: </strong>{payment.notes}
               </div>
             )}
 
             {/* Footer note */}
-            <div className="pt-2 border-t border-slate-100 text-center text-[11px] text-slate-400 font-semibold">
+            <div className="pt-2 text-center font-semibold" style={{ borderTop: "1px solid #f1f5f9", color: "#94a3b8", fontSize: "11px" }}>
               شكراً لتعاملكم معنا ▪ شركة الحوت للأدوات الكهربائية
             </div>
           </div>
