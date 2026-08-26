@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import SearchableSelect, { type SearchOption } from "@/components/SearchableSelect";
 import CustomerPaymentModal from "@/components/CustomerPaymentModal";
+import { captureElementToCanvas } from "@/lib/html2canvas-safe";
 import { getCurrentUserClient } from "@/hooks/useCurrentUser";
 import Pagination from "@/components/Pagination";
 
@@ -653,15 +654,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
     if (!element) return;
     try {
       setDownloadingImage(true);
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(element, {
-        useCORS: true,
-        allowTaint: true,
-        scale: 2,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: 0,
-      });
+      const canvas = await captureElementToCanvas(element, { scale: 2.5 });
       const link = document.createElement("a");
       link.download = "فاتورة شركة الحوت - #" + invData.invoice_number + ".png";
       link.href = canvas.toDataURL("image/png");
@@ -680,16 +673,8 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
     if (!element) return;
     try {
       setDownloadingPdf(true);
-      const html2canvas = (await import("html2canvas")).default;
       const { jsPDF } = await import("jspdf");
-      const canvas = await html2canvas(element, {
-        useCORS: true,
-        allowTaint: true,
-        scale: 2,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: 0,
-      });
+      const canvas = await captureElementToCanvas(element, { scale: 2.5 });
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
       const pdf = new jsPDF("p", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();

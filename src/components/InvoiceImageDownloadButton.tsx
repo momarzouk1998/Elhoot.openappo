@@ -1,21 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-// تحويل أي لون oklch إلى rgb لضمان توافق html2canvas
-function convertOklchToRgb(str: string, ctx: CanvasRenderingContext2D | null): string {
-  if (!str || typeof str !== "string" || !str.includes("oklch")) return str;
-  if (!ctx) return str.replace(/oklch\([^)]+\)/gi, "rgb(0,0,0)");
-  return str.replace(/oklch\([^)]+\)/gi, (match) => {
-    try {
-      ctx.fillStyle = "#000000";
-      ctx.fillStyle = match;
-      return ctx.fillStyle;
-    } catch {
-      return "rgb(0,0,0)";
-    }
-  });
-}
+import { captureElementToCanvas } from "@/lib/html2canvas-safe";
 
 export function InvoiceImageDownloadButton({
   targetId = "statement",
@@ -42,81 +28,7 @@ export function InvoiceImageDownloadButton({
       return null;
     }
 
-    const html2canvas = (await import("html2canvas")).default;
-
-    // مقياس scale: 3 لإنتاج صورة فائقة الوضوح والدقة للأرقام والنصوص في شاشات الموبايل والواتساب
-    const canvas = await html2canvas(targetElement, {
-      useCORS: true,
-      allowTaint: true,
-      scale: 3,
-      logging: false,
-      backgroundColor: "#ffffff",
-      scrollX: 0,
-      scrollY: 0,
-      onclone: (clonedDoc, clonedElement) => {
-        const tempCanvas = clonedDoc.createElement("canvas");
-        const ctx = tempCanvas.getContext("2d");
-
-        const styleTags = clonedDoc.querySelectorAll("style");
-        styleTags.forEach((styleTag) => {
-          if (styleTag.textContent && styleTag.textContent.includes("oklch")) {
-            styleTag.textContent = convertOklchToRgb(styleTag.textContent, ctx);
-          }
-        });
-
-        const origAll = [
-          targetElement,
-          ...Array.from(targetElement.querySelectorAll("*")),
-        ] as HTMLElement[];
-        const clonedAll = [
-          clonedElement,
-          ...Array.from(clonedElement.querySelectorAll("*")),
-        ] as HTMLElement[];
-
-        const COLOR_PROPS = [
-          "color",
-          "backgroundColor",
-          "borderColor",
-          "borderTopColor",
-          "borderBottomColor",
-          "borderLeftColor",
-          "borderRightColor",
-          "outlineColor",
-          "boxShadow",
-          "textShadow",
-        ];
-
-        for (let i = 0; i < origAll.length; i++) {
-          const orig = origAll[i];
-          const clone = clonedAll[i];
-          if (!orig || !clone) continue;
-
-          if (clone.style) {
-            for (let s = 0; s < clone.style.length; s++) {
-              const prop = clone.style[s];
-              const val = clone.style.getPropertyValue(prop);
-              if (val && val.includes("oklch")) {
-                clone.style.setProperty(prop, convertOklchToRgb(val, ctx));
-              }
-            }
-          }
-
-          try {
-            const computed = window.getComputedStyle(orig);
-            for (const prop of COLOR_PROPS) {
-              const val = (computed as any)[prop];
-              if (val && typeof val === "string" && val.includes("oklch")) {
-                const rgbVal = convertOklchToRgb(val, ctx);
-                const cssProp = prop.replace(/([A-Z])/g, "-$1").toLowerCase();
-                clone.style.setProperty(cssProp, rgbVal, "important");
-              }
-            }
-          } catch {}
-        }
-      },
-    });
-
-    return canvas;
+    return await captureElementToCanvas(targetElement, { scale: 2.5 });
   };
 
   const handleDownloadImage = async () => {
@@ -206,7 +118,7 @@ export function InvoiceImageDownloadButton({
         type="button"
         onClick={handleCopyImage}
         disabled={loading}
-        className="hidden sm:inline-flex bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-sm font-bold shadow-sm transition-all items-center gap-1.5 active:scale-95 disabled:cursor-not-allowed cursor-pointer border border-slate-700"
+        className="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-1.5 active:scale-95 disabled:cursor-not-allowed cursor-pointer border border-slate-700"
         title="نسخ صورة الفاتورة للصقها فوراً (Ctrl+V) في محادثة الواتساب"
       >
         {copied ? (

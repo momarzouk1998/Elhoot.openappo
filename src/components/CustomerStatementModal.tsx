@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
+import { captureElementToCanvas } from "@/lib/html2canvas-safe";
 
 interface CustomerStatementModalProps {
   customerId: string;

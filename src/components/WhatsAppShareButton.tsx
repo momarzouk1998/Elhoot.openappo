@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { captureElementToCanvas } from "@/lib/html2canvas-safe";
 
 export function WhatsAppShareButton({
   targetId = "statement",
@@ -33,15 +34,7 @@ export function WhatsAppShareButton({
 
     try {
       setSharing(true);
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(targetElement, {
-        useCORS: true,
-        allowTaint: true,
-        scale: 2.5,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: 0,
-      });
+      const canvas = await captureElementToCanvas(targetElement, { scale: 2.5 });
 
       const cleanPhone = recipientPhone ? String(recipientPhone).replace(/\D/g, "") : "";
       const formattedPhone = cleanPhone.startsWith("0") ? `2${cleanPhone}` : cleanPhone;
