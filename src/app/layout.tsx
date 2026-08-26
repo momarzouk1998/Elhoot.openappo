@@ -6,6 +6,8 @@ import prisma from "@/lib/db/prisma";
 import type { CurrentProfile, UserRole } from "@/lib/auth";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 // خط Cairo محمّل ذاتياً بواسطة Next (يستخدم display: swap فلا يحجب الرسم)
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
