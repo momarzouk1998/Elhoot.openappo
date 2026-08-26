@@ -1,76 +1,20 @@
 /**
  * Safe wrapper around html2canvas.
- * Uses an offscreen 2D canvas context to accurately convert any modern CSS color functions
- * (oklch, oklab, color()) to standard rgb() / rgba() values that html2canvas supports.
+ * Features a dynamic getComputedStyle Proxy in onclone that intercepts all color queries
+ * and resolves oklch/color()/oklab functions to standard rgb() format, completely shielding
+ * html2canvas from unsupported modern CSS color syntax.
  */
 
-const ESSENTIAL_PROPS = [
-  "box-sizing",
-  "display",
-  "flex-direction",
-  "justify-content",
-  "align-items",
-  "flex-wrap",
-  "gap",
-  "grid-template-columns",
-  "grid-gap",
-  "width",
-  "height",
-  "min-width",
-  "max-width",
-  "min-height",
-  "max-height",
-  "margin-top",
-  "margin-right",
-  "margin-bottom",
-  "margin-left",
-  "padding-top",
-  "padding-right",
-  "padding-bottom",
-  "padding-left",
-  "background-color",
-  "background-image",
-  "color",
-  "font-family",
-  "font-size",
-  "font-weight",
-  "line-height",
-  "text-align",
-  "direction",
-  "border-top-width",
-  "border-top-style",
-  "border-top-color",
-  "border-right-width",
-  "border-right-style",
-  "border-right-color",
-  "border-bottom-width",
-  "border-bottom-style",
-  "border-bottom-color",
-  "border-left-width",
-  "border-left-style",
-  "border-left-color",
-  "border-top-left-radius",
-  "border-top-right-radius",
-  "border-bottom-right-radius",
-  "border-bottom-left-radius",
-  "box-shadow",
-  "overflow",
-  "white-space",
-  "vertical-align",
-  "table-layout",
-  "border-collapse",
-] as const;
-
-function resolveColorToRgb(str: string, ctx: CanvasRenderingContext2D | null): string {
+function convertCssColorToRgb(str: string, ctx: CanvasRenderingContext2D | null): string {
   if (!str || typeof str !== "string") return str;
   if (!str.includes("oklch") && !str.includes("color(") && !str.includes("oklab")) return str;
-  if (!ctx) return str;
+  if (!ctx) return str.replace(/(oklch|oklab|color)\([^)]+\)/gi, "rgb(15, 65, 133)");
 
   return str.replace(/(oklch|oklab|color)\([^)]+\)/gi, (match) => {
     try {
       ctx.fillStyle = "#ffffff";
       ctx.fillStyle = match;
-      return ctx.fillStyle; // Native browser canvas resolves to exact rgb(r, g, b)
+      return ctx.fillStyle; // Browser canvas natively resolves to rgb(r, g, b)
     } catch {
       return "rgb(15, 65, 133)";
     }
@@ -98,41 +42,71 @@ export async function captureElementToCanvas(
       const helperCanvas = clonedDoc.createElement("canvas");
       const ctx = helperCanvas.getContext("2d");
 
-      // 1. Walk original and cloned elements, copying exact computed styles inline
-      try {
-        const liveElements = [element, ...Array.from(element.querySelectorAll("*"))] as HTMLElement[];
-        const cloneElements = [clonedElement, ...Array.from(clonedElement.querySelectorAll("*"))] as HTMLElement[];
-        const len = Math.min(liveElements.length, cloneElements.length);
-
-        for (let i = 0; i < len; i++) {
-          const live = liveElements[i];
-          const clone = cloneElements[i];
-          const computed = window.getComputedStyle(live);
-
-          for (const prop of ESSENTIAL_PROPS) {
-            let val = computed.getPropertyValue(prop);
-            if (!val || val === "initial" || val === "inherit") continue;
-            // Clean any oklch using true canvas context translation
-            if (val.includes("oklch") || val.includes("color(") || val.includes("oklab")) {
-              val = resolveColorToRgb(val, ctx);
-            }
-            clone.style.setProperty(prop, val, "important");
-          }
-        }
-      } catch (err) {
-        console.warn("Computed style inlining warning:", err);
+      // 1. Intercept getComputedStyle in the cloned document window with a Proxy
+      const docView = clonedDoc.defaultView || window;
+      if (docView && docView.getComputedStyle) {
+        const originalGetComputedStyle = docView.getComputedStyle.bind(docView);
+        docView.getComputedStyle = function (elt: Element, pseudoElt?: string | null) {
+          const cs = originalGetComputedStyle(elt, pseudoElt);
+          return new Proxy(cs, {
+            get(target, prop: string | symbol) {
+              const origVal = (target as any)[prop];
+              if (typeof origVal === "function") {
+                if (prop === "getPropertyValue") {
+                  return (cssProp: string) => {
+                    const val = target.getPropertyValue(cssProp);
+                    if (val && typeof val === "string" && (val.includes("oklch") || val.includes("color(") || val.includes("oklab"))) {
+                      return convertCssColorToRgb(val, ctx);
+                    }
+                    return val;
+                  };
+                }
+                return origVal.bind(target);
+              }
+              if (typeof origVal === "string" && (origVal.includes("oklch") || origVal.includes("color(") || origVal.includes("oklab"))) {
+                return convertCssColorToRgb(origVal, ctx);
+              }
+              return origVal;
+            },
+          });
+        };
       }
 
-      // 2. Remove external stylesheets and any style tags with oklch to avoid html2canvas parser errors
+      // 2. Sanitize any style tags inside the cloned document
       try {
-        clonedDoc.querySelectorAll('link[rel="stylesheet"]').forEach((link) => link.remove());
-        clonedDoc.querySelectorAll("style").forEach((style) => {
-          if (style.textContent && (style.textContent.includes("oklch") || style.textContent.includes("oklab"))) {
-            style.remove();
+        const styleTags = clonedDoc.querySelectorAll("style");
+        styleTags.forEach((styleTag) => {
+          if (styleTag.textContent && (styleTag.textContent.includes("oklch") || styleTag.textContent.includes("oklab"))) {
+            styleTag.textContent = convertCssColorToRgb(styleTag.textContent, ctx);
           }
         });
       } catch (err) {
-        console.warn("Stylesheet stripping warning:", err);
+        console.warn("Style tag sanitization warning:", err);
+      }
+
+      // 3. Remove external stylesheets to avoid html2canvas trying to parse raw remote CSS
+      try {
+        clonedDoc.querySelectorAll('link[rel="stylesheet"]').forEach((link) => link.remove());
+      } catch (err) {
+        console.warn("Link removal warning:", err);
+      }
+
+      // 4. Clean any inline style attributes
+      try {
+        const allCloned = [clonedElement, ...Array.from(clonedElement.querySelectorAll("*"))] as HTMLElement[];
+        allCloned.forEach((el) => {
+          if (el.style) {
+            for (let i = 0; i < el.style.length; i++) {
+              const prop = el.style[i];
+              const val = el.style.getPropertyValue(prop);
+              if (val && (val.includes("oklch") || val.includes("color(") || val.includes("oklab"))) {
+                el.style.setProperty(prop, convertCssColorToRgb(val, ctx), "important");
+              }
+            }
+          }
+        });
+      } catch (err) {
+        console.warn("Inline style sanitization warning:", err);
       }
     },
   });
