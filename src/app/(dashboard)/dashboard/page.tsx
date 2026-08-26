@@ -84,22 +84,14 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 flex items-center gap-2">
-            <LayoutDashboard className="w-8 h-8 text-elhoot-500" />
-            <span>الرئيسية</span>
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            أهلاً {profile.full_name} —{" "}
-            {new Date().toLocaleDateString("ar-EG", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </p>
-        </div>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-xl md:text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+          <LayoutDashboard className="w-7 h-7 text-elhoot-500" />
+          <span>الرئيسية</span>
+          <span className="text-xs md:text-sm font-normal text-gray-500 mr-1">
+            ({new Date().toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" })})
+          </span>
+        </h1>
       </div>
 
       {/* Row 1 — Sales & Cash */}
@@ -185,26 +177,22 @@ export default async function DashboardPage() {
       )}
 
       {/* Row 4 — System Statistics Counts */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3.5 pt-2">
-        <SmallStat iconKey="tags" label="المنتجات" value={totalProducts} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
         <SmallStat iconKey="users" label="العملاء" value={totalCustomers} />
         <SmallStat iconKey="factory" label="الموردين" value={totalSuppliers} />
-        <SmallStat iconKey="building" label="المخازن" value={totalStores} />
+        <SmallStat iconKey="tags" label="المنتجات" value={totalProducts} />
         <SmallStat iconKey="alert" label="تحت الحد الأدنى" value={lowStock} highlight={lowStock > 0} />
       </div>
 
       {lowStock > 0 && (
-        <div className="bg-rose-50 border-r-4 border-rose-500 rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">⚠️</span>
-            <div>
-              <h3 className="font-extrabold text-rose-800 text-sm">تنبيه: {lowStock} صنف تحت الحد الأدنى بالمخزن</h3>
-              <p className="text-xs text-rose-600 mt-0.5">يرجى مراجعة المخازن وإعادة الطلب للأصناف من الموردين.</p>
-            </div>
+        <div className="bg-rose-50 border-r-4 border-rose-500 rounded-xl p-3 shadow-sm flex items-center justify-between text-xs sm:text-sm">
+          <div className="flex items-center gap-1.5 font-bold text-rose-800">
+            <span>⚠️</span>
+            <span>تنبيه: {lowStock} صنف تحت الحد الأدنى</span>
           </div>
           <a
             href="/inventory"
-            className="text-xs bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-sm"
+            className="text-xs bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg transition-all shrink-0"
           >
             عرض المخزون ←
           </a>

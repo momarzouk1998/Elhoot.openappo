@@ -105,16 +105,18 @@ export default function PrintActions({
           title={title}
         />
 
-        {/* زر صورة واتساب + نسخ */}
-        <InvoiceImageDownloadButton targetId={targetId} fileName={fileName} label="🖼️ صورة" />
+        {/* زر صورة واتساب + نسخ (يخفى على شاشات الجوال الصغيرة) */}
+        <div className="hidden sm:inline-flex">
+          <InvoiceImageDownloadButton targetId={targetId} fileName={fileName} label="🖼️ صورة" />
+        </div>
 
         {/* زر PDF */}
         <PdfDownloadButton targetId={targetId} fileName={fileName} label="📄 PDF" />
 
-        {/* زر الطباعة */}
+        {/* زر الطباعة (يخفى على شاشات الجوال الصغيرة) */}
         <button
           onClick={() => window.print()}
-          className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
+          className="hidden sm:flex bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all items-center gap-1.5 active:scale-95 cursor-pointer"
         >
           <span>🖨️</span>
           <span>طباعة</span>

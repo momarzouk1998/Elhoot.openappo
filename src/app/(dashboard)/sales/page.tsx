@@ -1125,17 +1125,17 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
               <button
                 onClick={handleShareWhatsapp}
                 disabled={sharingWhatsapp}
-                className="flex-1 sm:flex-initial bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
                 title="إرسال واتساب"
               >
                 <span>{sharingWhatsapp ? "⏳" : "📲"}</span>
-                <span>{sharingWhatsapp ? "جاري..." : "واتساب"}</span>
+                <span>{sharingWhatsapp ? "إرسال واتساب" : "واتساب"}</span>
               </button>
 
               <button
                 onClick={handleDirectDownloadImage}
                 disabled={downloadingImage}
-                className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white text-sm font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="hidden sm:flex flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white text-sm font-bold px-4 py-2.5 rounded-xl items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
                 title="تحميل صورة"
               >
                 <span>{downloadingImage ? "⏳" : "🖼️"}</span>

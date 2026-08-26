@@ -80,25 +80,22 @@ function CustomersTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2.5">
-        <p className="text-sm font-semibold text-gray-500">{data?.total ?? '...'} عميل</p>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <button
-            onClick={() => setShow(true)}
-            className="flex-1 sm:flex-initial bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-sm px-4 py-2.5 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <span>➕</span>
-            <span>إضافة عميل جديد</span>
-          </button>
-          <a
-            href="/print/statement/all-customers"
-            target="_blank"
-            className="flex-1 sm:flex-initial bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm px-4 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
-          >
-            <span>📑</span>
-            <span>كشف حساب كل العملاء</span>
-          </a>
-        </div>
+      <div className="flex gap-2 w-full">
+        <button
+          onClick={() => setShow(true)}
+          className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs sm:text-sm px-2.5 sm:px-4 py-2.5 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
+        >
+          <span>➕</span>
+          <span>عميل جديد</span>
+        </button>
+        <a
+          href="/print/statement/all-customers"
+          target="_blank"
+          className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm px-2.5 sm:px-4 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer border border-slate-700 whitespace-nowrap"
+        >
+          <span>📑</span>
+          <span>كشف حساب مجمع</span>
+        </a>
       </div>
 
       <div className="card flex flex-col gap-3 md:flex-row">
@@ -213,10 +210,8 @@ function CustomerForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =
       <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-3 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold">+ إضافة عميل</h2>
         <div><label className="text-sm font-medium block mb-1">الاسم *</label><input className="input-field" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} autoFocus /></div>
-        <div className="grid grid-cols-2 gap-3">
-          <div><label className="text-sm font-medium block mb-1">الهاتف</label><input className="input-field" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
-          <div><label className="text-sm font-medium block mb-1">واتساب</label><input className="input-field" value={f.whatsapp} onChange={(e) => setF({ ...f, whatsapp: e.target.value })} /></div>
-        </div>
+        <div><label className="text-sm font-medium block mb-1">الهاتف</label><input className="input-field" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
+        <div><label className="text-sm font-medium block mb-1">واتساب</label><input className="input-field" value={f.whatsapp} onChange={(e) => setF({ ...f, whatsapp: e.target.value })} /></div>
         <div><label className="text-sm font-medium block mb-1">العنوان</label><input className="input-field" value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} /></div>
         <div>
           <label className="text-sm font-medium block mb-1">الرصيد الافتتاحي</label>
@@ -334,9 +329,20 @@ function RouteTab() {
 ============================================ */
 function CollectionsTab() {
   const [show, setShow] = useState(false);
-  const { data, loading, refetch } = useApi<{ items: Payment[]; total: number; total_amount: number }>("/api/payments/customers?limit=200");
+  const [search, setSearch] = useState("");
+  const [methodFilter, setMethodFilter] = useState("");
+  const { data, loading, refetch } = useApi<{ items: Payment[]; total: number; total_amount: number }>("/api/payments/customers?limit=500");
 
-  async function handleDelete(p: Payment) {
+  const filteredItems = (data?.items || []).filter(p => {
+    const matchSearch = !search.trim() || (p.customer?.name && p.customer.name.toLowerCase().includes(search.toLowerCase())) || (p.notes && p.notes.includes(search));
+    const matchMethod = !methodFilter || p.payment_method === methodFilter;
+    return matchSearch && matchMethod;
+  });
+
+  const totalFilteredAmount = filteredItems.reduce((s, p) => s + Number(p.amount), 0);
+
+  async function handleDelete(p: Payment, e: React.MouseEvent) {
+    e.stopPropagation();
     if (!confirm(`⚠️ هل أنت متأكد من حذف سند التحصيل بمبلغ ${formatEGP(p.amount)} ج للعميل "${p.customer?.name || 'غير محدد'}"؟\n\nسيتم إرجاع المبلغ لرصيد العميل وتخصيمه من الخزينة.`)) return;
     try {
       const res = await fetch(`/api/payments/customers/${p.id}`, { method: 'DELETE' });
@@ -355,8 +361,25 @@ function CollectionsTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <p className="text-sm text-gray-500">{data?.total ?? '...'} تحصيل • إجمالي: {data ? formatEGP(data.total_amount) : '...'} جنيه</p>
+        <p className="text-sm text-gray-500">{filteredItems.length} تحصيل • إجمالي: {formatEGP(totalFilteredAmount)} جنيه</p>
         <button onClick={() => setShow(true)} className="btn-primary">+ تحصيل جديد</button>
+      </div>
+
+      <div className="card flex flex-col gap-3 md:flex-row">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="🔍 ابحث بالاسم أو الملاحظات..."
+          className="input-field md:flex-1"
+        />
+        <select
+          value={methodFilter}
+          onChange={(e) => setMethodFilter(e.target.value)}
+          className="input-field md:w-56"
+        >
+          <option value="">كل طرق الدفع</option>
+          {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
       </div>
 
       {loading ? <div className="card text-center py-12 text-gray-500">⏳ جاري التحميل...</div> : (
@@ -374,26 +397,40 @@ function CollectionsTab() {
               </tr>
             </thead>
             <tbody>
-              {data?.items.map(p => (
-                <tr key={p.id} className="border-t hover:bg-gray-50">
+              {filteredItems.map(p => (
+                <tr
+                  key={p.id}
+                  onClick={() => window.open(`/print/payment/customer/${p.id}`, '_blank')}
+                  className="border-t hover:bg-emerald-50/60 cursor-pointer transition-colors"
+                  title="اضغط لعرض وتصدير ومشاركة إيصال التحصيل عبر واتساب"
+                >
                   <td className="p-3 text-xs">{formatDate(p.payment_date)}</td>
-                  <td className="p-3 font-semibold">{p.customer?.name || '—'}</td>
+                  <td className="p-3 font-semibold text-slate-800">{p.customer?.name || '—'}</td>
                   <td className="p-3 text-xs text-gray-600">{p.treasury?.name || '—'}</td>
                   <td className="p-3 text-xs">{p.payment_method}</td>
                   <td className="p-3 font-mono font-bold text-green-700">{formatEGP(p.amount)}</td>
                   <td className="p-3 text-xs text-gray-500">{p.notes || '—'}</td>
-                  <td className="p-3 text-center">
-                    <button
-                      onClick={() => handleDelete(p)}
-                      className="text-xs px-2.5 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded-md font-bold transition-colors"
-                      title="حذف سند التحصيل وإرجاع المبلغ لرصيد العميل"
-                    >
-                      🗑️ حذف
-                    </button>
+                  <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        onClick={() => window.open(`/print/payment/customer/${p.id}`, '_blank')}
+                        className="text-xs px-2 py-1 bg-emerald-100 text-emerald-800 rounded hover:bg-emerald-200 font-bold"
+                        title="إيصال التحصيل"
+                      >
+                        🖨️ إيصال
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(p, e)}
+                        className="text-xs px-2 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-bold transition-colors"
+                        title="حذف سند التحصيل"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
-              {data?.items.length === 0 && <tr><td colSpan={7} className="p-12 text-center text-gray-400">لا توجد تحصيلات</td></tr>}
+              {filteredItems.length === 0 && <tr><td colSpan={7} className="p-12 text-center text-gray-400">لا توجد تحصيلات مطابقة</td></tr>}
             </tbody>
           </table>
         </div>

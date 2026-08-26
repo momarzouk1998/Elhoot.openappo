@@ -206,7 +206,7 @@ export function InvoiceImageDownloadButton({
         type="button"
         onClick={handleCopyImage}
         disabled={loading}
-        className="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-1.5 active:scale-95 disabled:cursor-not-allowed cursor-pointer border border-slate-700"
+        className="hidden sm:inline-flex bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-sm font-bold shadow-sm transition-all items-center gap-1.5 active:scale-95 disabled:cursor-not-allowed cursor-pointer border border-slate-700"
         title="نسخ صورة الفاتورة للصقها فوراً (Ctrl+V) في محادثة الواتساب"
       >
         {copied ? (

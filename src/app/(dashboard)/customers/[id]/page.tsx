@@ -65,50 +65,63 @@ export default function CustomerDetailPage() {
   return (
     <div className="space-y-4">
       {/* رأس الصفحة */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-650">👤 {customer.name}</h1>
-          <p className="text-sm text-gray-500">تفاصيل العميل</p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={() => window.open(`/print/statement/customer/${customer.id}`, '_blank')} className="text-sm px-3 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 border border-green-200">🖨️ كشف حساب</button>
-          <button onClick={() => setShowEdit(true)} className="btn-secondary text-sm">✏️ تعديل</button>
-          <button onClick={() => deleteCustomer(customer, router)} className="text-sm px-3 py-2 rounded-lg bg-red-100 text-red-700 hover:bg-red-200">🗑️ حذف</button>
-          <button onClick={() => router.back()} className="btn-secondary">↩️ العودة</button>
+      <div className="space-y-2">
+        <h1 className="text-xl md:text-2xl font-extrabold text-slate-800 break-words">
+          👤 {customer.name}
+        </h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.open(`/print/statement/customer/${customer.id}`, '_blank')}
+            className="text-xs sm:text-sm font-bold px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-300 flex items-center gap-1 shadow-sm cursor-pointer"
+          >
+            <span>🖨️</span>
+            <span>كشف حساب</span>
+          </button>
+          <button
+            onClick={() => setShowEdit(true)}
+            className="text-xs sm:text-sm font-bold p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 shadow-sm cursor-pointer"
+            title="تعديل"
+          >
+            ✏️
+          </button>
+          <button
+            onClick={() => deleteCustomer(customer, router)}
+            className="text-xs sm:text-sm font-bold p-2 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 shadow-sm cursor-pointer"
+            title="حذف"
+          >
+            🗑️
+          </button>
         </div>
       </div>
 
-      {/* قسم بيانات العميل */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="card space-y-3">
-          <div>
-            <p className="text-sm text-gray-500">الهاتف</p>
-            <p className="font-semibold">{customer.phone || '—'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">واتساب</p>
-            <p className="font-semibold">{customer.whatsapp || '—'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">العنوان</p>
-            <p className="font-semibold">{customer.address || '—'}</p>
-          </div>
-        </div>
-
-        <div className="card space-y-3">
-          <div>
-            <p className="text-sm text-gray-500">الرصيد الافتتاحي</p>
-            <p className="font-semibold">{formatEGP(customer.opening_balance)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">الرصيد الحالي</p>
-            <p className={`font-bold text-lg ${Number(customer.balance) > 0 ? 'text-red-700' : 'text-green-700'}`}>{formatEGP(customer.balance)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">الملاحظات</p>
-            <p className="font-semibold">{customer.notes || '—'}</p>
-          </div>
-        </div>
+      {/* جدول بيانات العميل */}
+      <div className="card p-0 overflow-hidden border border-slate-200">
+        <table className="w-full text-xs sm:text-sm border-collapse">
+          <tbody>
+            <tr className="border-b bg-slate-50/50">
+              <td className="p-2.5 font-bold text-gray-500 w-1/4 border-l">الهاتف:</td>
+              <td className="p-2.5 font-semibold text-slate-800 font-mono w-1/4 border-l">{customer.phone || '—'}</td>
+              <td className="p-2.5 font-bold text-gray-500 w-1/4 border-l">الواتساب:</td>
+              <td className="p-2.5 font-semibold text-slate-800 font-mono w-1/4">{customer.whatsapp || '—'}</td>
+            </tr>
+            <tr className="border-b">
+              <td className="p-2.5 font-bold text-gray-500 border-l">رصيد افتتاحي:</td>
+              <td className="p-2.5 font-bold font-mono text-slate-700 border-l">{formatEGP(customer.opening_balance)} ج</td>
+              <td className="p-2.5 font-bold text-gray-500 border-l">الرصيد الحالي:</td>
+              <td className={`p-2.5 font-extrabold font-mono text-base ${Number(customer.balance) > 0 ? 'text-red-700' : Number(customer.balance) < 0 ? 'text-blue-700' : 'text-emerald-700'}`}>
+                {formatEGP(customer.balance)} ج
+              </td>
+            </tr>
+            <tr className="border-b bg-slate-50/50">
+              <td className="p-2.5 font-bold text-gray-500 border-l">العنوان:</td>
+              <td colSpan={3} className="p-2.5 font-semibold text-slate-800">{customer.address || '—'}</td>
+            </tr>
+            <tr>
+              <td className="p-2.5 font-bold text-gray-500 border-l">الملاحظات:</td>
+              <td colSpan={3} className="p-2.5 font-semibold text-slate-800">{customer.notes || '—'}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       {/* قسم كشف الحساب */}
@@ -206,21 +219,6 @@ function StatementSection({ customerId, balance, onCollect, onCustomerChanged }:
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold">📋 كشف الحساب</h2>
         <button onClick={onCollect} className="btn-primary text-sm">+ تحصيل جديد</button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="card p-4">
-          <div className="text-sm text-gray-500">رصيد مدين (له علينا)</div>
-          <div className={`text-2xl font-bold ${balance > 0 ? "text-red-700" : "text-green-700"}`}>{formatEGP(balance)}</div>
-        </div>
-        <div className="card p-4">
-          <div className="text-sm text-gray-500">إجمالي المدفوعات</div>
-          <div className="text-2xl font-bold text-blue-700">{formatEGP(totalPaid)}</div>
-        </div>
-        <div className="card p-4">
-          <div className="text-sm text-gray-500">عدد الحركات</div>
-          <div className="text-2xl font-bold text-slate-650">{payments.length}</div>
-        </div>
       </div>
 
       {loading ? <div className="card text-center py-8 text-gray-500">⏳ جاري التحميل...</div> : (

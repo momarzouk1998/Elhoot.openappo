@@ -125,7 +125,19 @@ export default function CustomerPaymentModal({
         </div>
 
         <form onSubmit={handleSave} className="p-5 space-y-4">
-          {/* Customer Selection or display */}
+          {/* 1. Date Field */}
+          <div>
+            <label className="text-xs font-bold text-gray-700 block mb-1">تاريخ التحصيل *</label>
+            <input
+              type="date"
+              value={paymentDate}
+              onChange={(e) => setPaymentDate(e.target.value)}
+              className="input-field text-sm w-full"
+              required
+            />
+          </div>
+
+          {/* 2. Customer Field */}
           {defaultCustomerId && defaultCustomerName ? (
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
               <span className="text-xs text-emerald-800 font-semibold block mb-0.5">العميل المحدد:</span>
@@ -140,7 +152,7 @@ export default function CustomerPaymentModal({
             </div>
           ) : (
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">اختر العميل *</label>
+              <label className="text-xs font-bold text-gray-700 block mb-1">العميل *</label>
               <input
                 type="text"
                 placeholder="🔍 بحث بالاسم أو الهاتف..."
@@ -164,10 +176,10 @@ export default function CustomerPaymentModal({
             </div>
           )}
 
-          {/* Amount and Method */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* 3. Amount and Payment Method */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">المبلغ المحصل (ج) *</label>
+              <label className="text-xs font-bold text-gray-700 block mb-1">المبلغ (ج) *</label>
               <input
                 type="number"
                 min="0.01"
@@ -196,8 +208,8 @@ export default function CustomerPaymentModal({
             </div>
           </div>
 
-          {/* Treasury & Payment Date */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* 4. Treasury (Only visible if > 1 treasury exists) */}
+          {(treasuriesData?.items || []).length > 1 && (
             <div>
               <label className="text-xs font-bold text-gray-700 block mb-1">الخزينة المستلمة *</label>
               <select
@@ -214,20 +226,11 @@ export default function CustomerPaymentModal({
                 ))}
               </select>
             </div>
-            <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">تاريخ التحصيل</label>
-              <input
-                type="date"
-                className="input-field text-xs w-full"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-              />
-            </div>
-          </div>
+          )}
 
-          {/* Notes */}
+          {/* 5. Notes */}
           <div>
-            <label className="text-xs font-bold text-gray-700 block mb-1">ملاحظات / رقم الإيصال (اختياري)</label>
+            <label className="text-xs font-bold text-gray-700 block mb-1">ملاحظات</label>
             <input
               type="text"
               placeholder="مثال: دفعة نقدية مع الطلبية..."
