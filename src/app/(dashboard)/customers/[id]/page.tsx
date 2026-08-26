@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useApi, useApiMutation } from "@/hooks/useApi";
 import { formatEGP, formatDate, statusColor } from "@/lib/format";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import PaymentReceiptModal from "@/components/PaymentReceiptModal";
 
 interface CustomerDetail {
   id: string;
@@ -181,6 +182,7 @@ function StatementSection({ customerId, balance, onCollect, onCustomerChanged }:
   const totalPaid = data?.total_amount || 0;
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [deletingPayment, setDeletingPayment] = useState<Payment | null>(null);
+  const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
 
   // تعديل مدفوعة
   async function editPayment(payment: Payment) {
@@ -236,31 +238,36 @@ function StatementSection({ customerId, balance, onCollect, onCustomerChanged }:
             </thead>
             <tbody>
               {payments.map(p => (
-                <tr key={p.id} className="border-t hover:bg-gray-50">
+                <tr
+                  key={p.id}
+                  onClick={() => setSelectedReceiptId(p.id)}
+                  className="border-t hover:bg-emerald-50/60 cursor-pointer transition-colors"
+                  title="اضغط لعرض وتدقيق ومشاركة إيصال التحصيل عبر واتساب"
+                >
                   <td className="p-3 text-xs">{formatDate(p.payment_date)}</td>
                   <td className="p-3 text-xs text-gray-600">{p.treasury?.name || '—'}</td>
                   <td className="p-3 text-xs">{p.payment_method}</td>
                   <td className="p-3">{p.notes || 'تحصيل من عميل'}</td>
                   <td className="p-3 font-mono font-bold text-green-700">{formatEGP(p.amount)}</td>
-                  <td className="p-3">
+                  <td className="p-3" onClick={e => e.stopPropagation()}>
                     <div className="flex gap-1 justify-center">
                       <button
-                        onClick={() => window.open(`/print/payment/customer/${p.id}`, '_blank')}
-                        className="text-xs px-2 py-1 bg-emerald-100 text-emerald-800 rounded hover:bg-emerald-200 font-bold"
-                        title="طباعة / مشاركة إيصال التحصيل"
+                        onClick={() => setSelectedReceiptId(p.id)}
+                        className="text-xs px-2 py-1 bg-emerald-100 text-emerald-800 rounded hover:bg-emerald-200 font-bold cursor-pointer"
+                        title="إيصال التحصيل"
                       >
-                        🖨️ إيصال
+                        💳 إيصال
                       </button>
                       <button
                         onClick={() => editPayment(p)}
-                        className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                        className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 cursor-pointer"
                         title="تعديل"
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => deletePayment(p)}
-                        className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
+                        className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 cursor-pointer"
                         title="حذف"
                       >
                         🗑️
@@ -281,6 +288,10 @@ function StatementSection({ customerId, balance, onCollect, onCustomerChanged }:
             )}
           </table>
         </div>
+      )}
+      
+      {selectedReceiptId && (
+        <PaymentReceiptModal paymentId={selectedReceiptId} onClose={() => setSelectedReceiptId(null)} />
       )}
       
       {editingPayment && (

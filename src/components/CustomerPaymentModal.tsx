@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useApi, useApiMutation } from "@/hooks/useApi";
 import { formatEGP } from "@/lib/format";
+import PaymentReceiptModal from "@/components/PaymentReceiptModal";
 
 interface CustomerPaymentModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export default function CustomerPaymentModal({
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
   const [notes, setNotes] = useState("");
   const [custSearch, setCustSearch] = useState("");
+  const [createdReceiptId, setCreatedReceiptId] = useState<string | null>(null);
 
   const { data: treasuriesData } = useApi<{ items: { id: string; name: string; current_balance: number }[] }>("/api/treasury");
   const { data: customersData } = useApi<{ items: { id: string; name: string; phone: string | null; balance: number }[] }>("/api/customers?limit=1000");
@@ -93,14 +95,25 @@ export default function CustomerPaymentModal({
     }
 
     const createdPaymentId = (res.data as any)?.id;
-    if (confirm(`✅ تم تسجيل سند التحصيل بمبلغ ${formatEGP(numAmount)} ج بنجاح وإيداعه في الخزينة.\n\nهل تريد طباعة / مشاركة إيصال التحصيل عبر الواتساب؟`)) {
-      if (createdPaymentId) {
-        window.open(`/print/payment/customer/${createdPaymentId}`, '_blank');
-      }
-    }
-
     if (onSuccess) onSuccess();
-    onClose();
+
+    if (createdPaymentId) {
+      setCreatedReceiptId(createdPaymentId);
+    } else {
+      onClose();
+    }
+  }
+
+  if (createdReceiptId) {
+    return (
+      <PaymentReceiptModal
+        paymentId={createdReceiptId}
+        onClose={() => {
+          setCreatedReceiptId(null);
+          onClose();
+        }}
+      />
+    );
   }
 
   return (

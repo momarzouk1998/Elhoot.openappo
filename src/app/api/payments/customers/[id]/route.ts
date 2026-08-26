@@ -22,7 +22,46 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     });
 
     if (!payment) return NextResponse.json({ ok: false, error: { code: "NOT_FOUND" } }, { status: 404 });
-    return NextResponse.json({ ok: true, data: payment });
+
+    // حساب الحساب السابق والمتبقي النهائي
+    let prevBalance = 0;
+    let newBalance = 0;
+    if (payment.customer) {
+      const customerId = payment.customer.id;
+      const payCreatedAt = payment.created_at || payment.payment_date || new Date();
+      const opening = Number(payment.customer.opening_balance || 0);
+
+      const [priorInvoices, priorPayments, priorReturns] = await Promise.all([
+        prisma.sales_invoices.aggregate({
+          where: { customer_id: customerId, status: { not: 'ملغاة' }, created_at: { lt: payCreatedAt } },
+          _sum: { total: true },
+        }),
+        prisma.customer_payments.aggregate({
+          where: { customer_id: customerId, id: { not: payment.id }, created_at: { lt: payCreatedAt } },
+          _sum: { amount: true },
+        }),
+        prisma.customer_return_invoices.aggregate({
+          where: { customer_id: customerId, status: { not: 'ملغاة' }, created_at: { lt: payCreatedAt } },
+          _sum: { total_amount: true },
+        }),
+      ]);
+
+      const priorInvTotal = Number(priorInvoices._sum.total || 0);
+      const priorPayTotal = Number(priorPayments._sum.amount || 0);
+      const priorRetTotal = Number(priorReturns._sum.total_amount || 0);
+
+      prevBalance = opening + priorInvTotal - priorPayTotal - priorRetTotal;
+      newBalance = prevBalance - Number(payment.amount);
+    }
+
+    return NextResponse.json({
+      ok: true,
+      data: {
+        ...payment,
+        prev_balance: prevBalance,
+        new_balance: newBalance,
+      },
+    });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: { code: "DB_ERROR", message: e?.message } }, { status: 500 });
   }

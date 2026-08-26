@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useApi, useApiMutation } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
 import Pagination from "@/components/Pagination";
+import PaymentReceiptModal from "@/components/PaymentReceiptModal";
 
 /* ============================================
    أنواع مشتركة
@@ -331,6 +332,7 @@ function CollectionsTab() {
   const [show, setShow] = useState(false);
   const [search, setSearch] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
+  const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
   const { data, loading, refetch } = useApi<{ items: Payment[]; total: number; total_amount: number }>("/api/payments/customers?limit=500");
 
   const filteredItems = (data?.items || []).filter(p => {
@@ -400,9 +402,9 @@ function CollectionsTab() {
               {filteredItems.map(p => (
                 <tr
                   key={p.id}
-                  onClick={() => window.open(`/print/payment/customer/${p.id}`, '_blank')}
+                  onClick={() => setSelectedReceiptId(p.id)}
                   className="border-t hover:bg-emerald-50/60 cursor-pointer transition-colors"
-                  title="اضغط لعرض وتصدير ومشاركة إيصال التحصيل عبر واتساب"
+                  title="اضغط لعرض إيصال التحصيل ومشاركته عبر الواتساب"
                 >
                   <td className="p-3 text-xs">{formatDate(p.payment_date)}</td>
                   <td className="p-3 font-semibold text-slate-800">{p.customer?.name || '—'}</td>
@@ -413,15 +415,15 @@ function CollectionsTab() {
                   <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center justify-center gap-1.5">
                       <button
-                        onClick={() => window.open(`/print/payment/customer/${p.id}`, '_blank')}
-                        className="text-xs px-2 py-1 bg-emerald-100 text-emerald-800 rounded hover:bg-emerald-200 font-bold"
+                        onClick={() => setSelectedReceiptId(p.id)}
+                        className="text-xs px-2 py-1 bg-emerald-100 text-emerald-800 rounded hover:bg-emerald-200 font-bold cursor-pointer"
                         title="إيصال التحصيل"
                       >
-                        🖨️ إيصال
+                        💳 إيصال
                       </button>
                       <button
                         onClick={(e) => handleDelete(p, e)}
-                        className="text-xs px-2 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-bold transition-colors"
+                        className="text-xs px-2 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-bold transition-colors cursor-pointer"
                         title="حذف سند التحصيل"
                       >
                         🗑️
@@ -437,6 +439,10 @@ function CollectionsTab() {
       )}
 
       {show && <CollectionForm onClose={() => setShow(false)} onSaved={() => { setShow(false); refetch(); }} />}
+
+      {selectedReceiptId && (
+        <PaymentReceiptModal paymentId={selectedReceiptId} onClose={() => setSelectedReceiptId(null)} />
+      )}
     </div>
   );
 }

@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useApi, useApiMutation } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
 
+import PaymentReceiptModal from "@/components/PaymentReceiptModal";
+
 interface Payment {
   id: string; payment_date: string; amount: number; payment_method: string; notes: string | null;
   customer?: { id: string; name: string; phone: string | null } | null;
@@ -15,9 +17,11 @@ const METHODS = ["نقدي", "إنستاباي", "فودافون كاش", "تح�
 
 export default function CustomerPaymentsPage() {
   const [show, setShow] = useState(false);
+  const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
   const { data, loading, refetch } = useApi<ApiResponse>("/api/payments/customers?limit=200");
 
-  async function handleDelete(p: Payment) {
+  async function handleDelete(p: Payment, e: React.MouseEvent) {
+    e.stopPropagation();
     if (!confirm(`⚠️ هل أنت متأكد من حذف سند التحصيل بمبلغ ${formatEGP(p.amount)} ج للعميل "${p.customer?.name || 'غير محدد'}"؟\n\nسيتم إرجاع المبلغ لرصيد العميل وتخصيمه من الخزينة.`)) return;
     try {
       const res = await fetch(`/api/payments/customers/${p.id}`, { method: 'DELETE' });
@@ -59,28 +63,33 @@ export default function CustomerPaymentsPage() {
             </thead>
             <tbody>
               {data?.items.map(p => (
-                <tr key={p.id} className="border-t hover:bg-gray-50">
+                <tr
+                  key={p.id}
+                  onClick={() => setSelectedReceiptId(p.id)}
+                  className="border-t hover:bg-emerald-50/60 cursor-pointer transition-colors"
+                  title="اضغط لعرض إيصال التحصيل ومشاركته عبر الواتساب"
+                >
                   <td className="p-3 text-xs">{formatDate(p.payment_date)}</td>
-                  <td className="p-3 font-semibold">{p.customer?.name || '—'}</td>
+                  <td className="p-3 font-semibold text-slate-800">{p.customer?.name || '—'}</td>
                   <td className="p-3 text-xs text-gray-600">{p.treasury?.name || '—'}</td>
                   <td className="p-3 text-xs">{p.payment_method}</td>
                   <td className="p-3 font-mono font-bold text-green-700">{formatEGP(p.amount)}</td>
                   <td className="p-3 text-xs text-gray-500">{p.notes || '—'}</td>
-                  <td className="p-3 text-center">
+                  <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
                     <div className="flex gap-1 justify-center">
                       <button
-                        onClick={() => window.open(`/print/payment/customer/${p.id}`, '_blank')}
-                        className="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded font-bold"
-                        title="طباعة / مشاركة إيصال التحصيل"
+                        onClick={() => setSelectedReceiptId(p.id)}
+                        className="text-xs px-2 py-1 bg-emerald-100 text-emerald-800 rounded hover:bg-emerald-200 font-bold cursor-pointer"
+                        title="إيصال التحصيل"
                       >
-                        🖨️ إيصال
+                        💳 إيصال
                       </button>
                       <button
-                        onClick={() => handleDelete(p)}
-                        className="text-xs px-2 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-bold"
-                        title="حذف سند التحصيل وإرجاع المبلغ لرصيد العميل"
+                        onClick={(e) => handleDelete(p, e)}
+                        className="text-xs px-2 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-bold cursor-pointer"
+                        title="حذف سند التحصيل"
                       >
-                        🗑️ حذف
+                        🗑️
                       </button>
                     </div>
                   </td>
@@ -92,20 +101,41 @@ export default function CustomerPaymentsPage() {
         </div>
       )}
 
-      {show && <Form onClose={() => setShow(false)} onSaved={() => { setShow(false); refetch(); }} />}
+      {show && (
+        <Form
+          onClose={() => setShow(false)}
+          onSaved={(newPaymentId) => {
+            setShow(false);
+            refetch();
+            if (newPaymentId) {
+              setSelectedReceiptId(newPaymentId);
+            }
+          }}
+        />
+      )}
+
+      {selectedReceiptId && (
+        <PaymentReceiptModal paymentId={selectedReceiptId} onClose={() => setSelectedReceiptId(null)} />
+      )}
     </div>
   );
 }
 
-function Form({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [f, setF] = useState({ customer_id: '', amount: 0, payment_method: 'نقدي', treasury_id: '', payment_date: '', notes: '' });
+function Form({ onClose, onSaved }: { onClose: () => void; onSaved: (paymentId?: string) => void }) {
+  const [f, setF] = useState({ customer_id: '', amount: 0, payment_method: 'نقدي', treasury_id: '', payment_date: new Date().toISOString().split('T')[0], notes: '' });
   const { mutate, loading } = useApiMutation();
   const [customers, setCustomers] = useState<{id:string;name:string}[]>([]);
   const [treasuries, setTreasuries] = useState<{id:string;name:string}[]>([]);
   const [custSearch, setCustSearch] = useState("");
 
   useState(() => {
-    fetch('/api/treasury').then(r => r.json()).then(j => setTreasuries(j.data?.items || [])).catch(() => {});
+    fetch('/api/treasury').then(r => r.json()).then(j => {
+      const items = j.data?.items || [];
+      setTreasuries(items);
+      if (items.length > 0) {
+        setF(prev => ({ ...prev, treasury_id: items[0].id }));
+      }
+    }).catch(() => {});
     fetch('/api/customers?limit=5000').then(r => r.json()).then(j => setCustomers(j.data?.items || [])).catch(() => {});
   });
 
@@ -116,10 +146,7 @@ function Form({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }
     const res = await mutate('POST', '/api/payments/customers', f);
     if (res.error) { alert('❌ ' + res.error); return; }
     const createdId = (res.data as any)?.id;
-    if (confirm(`✅ تم تسجيل سند التحصيل بنجاح.\n\nهل تريد طباعة / مشاركة إيصال التحصيل عبر الواتساب؟`)) {
-      if (createdId) window.open(`/print/payment/customer/${createdId}`, '_blank');
-    }
-    onSaved();
+    onSaved(createdId);
   }
 
   return (
@@ -143,13 +170,15 @@ function Form({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="text-sm font-medium block mb-1">الخزينة *</label>
-            <select className="input-field" value={f.treasury_id} onChange={(e) => setF({ ...f, treasury_id: e.target.value })}>
-              <option value="">اختر...</option>
-              {treasuries.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
-          </div>
+          {treasuries.length > 1 && (
+            <div>
+              <label className="text-sm font-medium block mb-1">الخزينة *</label>
+              <select className="input-field" value={f.treasury_id} onChange={(e) => setF({ ...f, treasury_id: e.target.value })}>
+                <option value="">اختر...</option>
+                {treasuries.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </div>
+          )}
           <div><label className="text-sm font-medium block mb-1">التاريخ</label><input type="date" className="input-field" value={f.payment_date} onChange={(e) => setF({ ...f, payment_date: e.target.value })} /></div>
         </div>
         <div><label className="text-sm font-medium block mb-1">ملاحظات</label><input className="input-field" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></div>

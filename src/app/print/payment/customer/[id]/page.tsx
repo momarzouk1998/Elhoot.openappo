@@ -150,11 +150,8 @@ export default async function CustomerPaymentReceiptPage({
 
         {/* Integrated High-Contrast Header */}
         <div
+          className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-5"
           style={{
-            padding: '1.1rem 1.3rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
             borderBottom: `2px solid ${C.border}`,
             background: '#ffffff',
           }}
@@ -163,8 +160,8 @@ export default async function CustomerPaymentReceiptPage({
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div
               style={{
-                width: '68px',
-                height: '68px',
+                width: '64px',
+                height: '64px',
                 backgroundColor: C.white,
                 borderRadius: '12px',
                 padding: '3px',
@@ -183,7 +180,7 @@ export default async function CustomerPaymentReceiptPage({
               />
             </div>
             <div>
-              <div style={{ fontSize: '1.45rem', fontWeight: 900, color: C.darkNavy, lineHeight: 1.15 }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 900, color: C.darkNavy, lineHeight: 1.15 }}>
                 شركة الحوت
               </div>
               <div style={{ fontSize: '0.85rem', fontWeight: 700, color: C.emerald, marginTop: '3px' }}>
@@ -196,7 +193,7 @@ export default async function CustomerPaymentReceiptPage({
           </div>
 
           {/* Receipt Badge & Meta */}
-          <div style={{ textAlign: 'left' }}>
+          <div>
             <div
               style={{
                 display: 'inline-block',
@@ -204,7 +201,7 @@ export default async function CustomerPaymentReceiptPage({
                 color: C.white,
                 padding: '5px 16px',
                 borderRadius: '20px',
-                fontSize: '0.92rem',
+                fontSize: '0.88rem',
                 fontWeight: 900,
                 boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)',
               }}
@@ -227,14 +224,12 @@ export default async function CustomerPaymentReceiptPage({
         {/* Customer Info & Payment Details Box */}
         <div style={{ padding: '1rem 1.3rem' }} className="space-y-3">
           <div
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3"
             style={{
               backgroundColor: '#f8fafc',
               border: `1.5px solid ${C.border}`,
               borderRadius: '10px',
               padding: '0.85rem 1.1rem',
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '0.75rem',
               fontSize: '0.88rem',
             }}
           >
