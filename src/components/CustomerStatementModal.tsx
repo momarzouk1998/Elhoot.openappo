@@ -11,13 +11,14 @@ interface CustomerStatementModalProps {
 
 export default function CustomerStatementModal({ customerId, onClose }: CustomerStatementModalProps) {
   const { data: statementData, loading } = useApi<any>(`/api/customers/${customerId}/statement`);
+  const [sharingWhatsapp, setSharingWhatsapp] = useState(false);
   const [downloadingImage, setDownloadingImage] = useState(false);
 
   if (loading) {
     return (
       <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
         <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl p-8 text-center space-y-3 shadow-2xl max-w-sm w-full">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <div className="w-8 h-8 border-4 border-sky-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="text-sm font-bold text-gray-600">جاري فتح كشف الحساب...</p>
         </div>
       </div>
@@ -37,44 +38,72 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
 
   const { customer, entries, totalDebit, totalCredit, finalBalance } = statementData;
   const sheetId = "statement-sheet-" + customerId;
+  const customerName = customer.name || "العميل المحترم";
 
-  // ─── WhatsApp: instant text — no screenshot, no delay ───────────────────────
-  const handleShareWhatsapp = () => {
-    const customerPhone = customer.whatsapp || customer.phone;
-    const cleanPhone    = customerPhone ? String(customerPhone).replace(/\D/g, "") : "";
-    const formattedPhone = cleanPhone.startsWith("0") ? `2${cleanPhone}` : cleanPhone;
-    const customerName  = customer.name || "العميل المحترم";
+  // ─── Native WhatsApp Share: Mobile Native Share Sheet with Image ───────────
+  const handleShareWhatsapp = async () => {
+    if (sharingWhatsapp) return;
+    const element = document.getElementById(sheetId);
+    if (!element) return;
 
-    const msg = [
-      `مرحباً بك أستاذ ${customerName} 👋`,
-      ``,
-      `📑 *كشف حساب — شركة الحوت*`,
-      `📅 ${formatDate(new Date())}`,
-      ``,
-      `💸 المبيعات:  ${formatEGP(totalDebit)} ج`,
-      `✅ السداد:    ${formatEGP(totalCredit)} ج`,
-      `📌 المتبقي:   ${formatEGP(finalBalance)} ج`,
-      ``,
-      `شكراً لتعاملكم مع شركة الحوت 🙏`,
-    ].join("\n");
+    try {
+      setSharingWhatsapp(true);
+      const canvas = await captureElementToCanvas(element, { scale: 2.5 });
 
-    const waUrl = formattedPhone
-      ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`
-      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+      const customerPhone = customer.whatsapp || customer.phone;
+      const cleanPhone    = customerPhone ? String(customerPhone).replace(/\D/g, "") : "";
+      const formattedPhone = cleanPhone.startsWith("0") ? `2${cleanPhone}` : cleanPhone;
+      const receiptText = `مرحباً بك أستاذ ${customerName}،\nمرفق كشف حساب شركة الحوت للأدوات الكهربائية.\nالمتبقي النهائي: ${formatEGP(finalBalance)} ج\nشكراً لتعاملكم معنا.`;
 
-    window.open(waUrl, "_blank");
+      // 1. Native Mobile Web Share API
+      if (typeof navigator !== "undefined" && typeof (navigator as any).canShare === "function") {
+        try {
+          const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+          if (blob) {
+            const file = new File([blob as BlobPart], `كشف_حساب_${customerName}.png`, { type: "image/png" });
+            if ((navigator as any).canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: "كشف حساب شركة الحوت",
+                text: receiptText,
+              });
+              return;
+            }
+          }
+        } catch (shareErr: any) {
+          if (shareErr?.name === "AbortError") return;
+          console.warn("Native share failed, fallback to direct download", shareErr);
+        }
+      }
+
+      // 2. Fallback: Auto download image and open WhatsApp
+      const link = document.createElement("a");
+      link.download = `كشف_حساب_${customerName}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+
+      const waUrl = formattedPhone
+        ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(receiptText)}`
+        : `https://wa.me/?text=${encodeURIComponent(receiptText)}`;
+      window.open(waUrl, "_blank");
+    } catch (err) {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء تجهيز كشف الحساب للمشاركة");
+    } finally {
+      setSharingWhatsapp(false);
+    }
   };
 
-  // ─── Download image ─────────────────────────────────────────────────────────
+  // ─── Download Image ─────────────────────────────────────────────────────────
   const handleDownloadImage = async () => {
     if (downloadingImage) return;
     const element = document.getElementById(sheetId);
     if (!element) return;
     try {
       setDownloadingImage(true);
-      const canvas = await captureElementToCanvas(element, { scale: 2 });
+      const canvas = await captureElementToCanvas(element, { scale: 2.5 });
       const link = document.createElement("a");
-      link.download = `كشف_حساب_${customer.name}.png`;
+      link.download = `كشف_حساب_${customerName}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
     } catch (err) {
@@ -83,6 +112,11 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
     } finally {
       setDownloadingImage(false);
     }
+  };
+
+  // ─── Print page: opens styled server-rendered page ─────────────────────────
+  const handlePrint = () => {
+    window.open(`/print/statement/customer/${customerId}`, "_blank");
   };
 
   return (
@@ -102,103 +136,112 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
             style={{ direction: "rtl", fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif", color: "#0f172a", backgroundColor: "#ffffff" }}
           >
             {/* Header */}
-            <div style={{ borderBottom: "2px solid #e2e8f0", paddingBottom: "12px" }}>
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                {/* Logo + name */}
-                <div className="flex items-center gap-3">
-                  <div style={{ width: "52px", height: "52px", backgroundColor: "#ffffff", borderRadius: "12px", padding: "3px", border: "2px solid #0284c7", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <img src="/logo.png" alt="شركة الحوت" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                  </div>
-                  <div>
-                    <h2 style={{ fontSize: "1.2rem", fontWeight: 900, color: "#002b61", margin: 0, lineHeight: 1.2 }}>
-                      شركة الحوت
-                    </h2>
-                    <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "#0284c7", margin: "2px 0 0 0" }}>
-                      للأدوات واللوحات الكهربائية
-                    </p>
-                  </div>
+            <div className="pb-4 border-b-2 border-slate-100 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl border-2 border-sky-600 p-1 bg-white flex items-center justify-center shrink-0 shadow-sm">
+                  <img src="/logo.png" alt="شركة الحوت" className="w-full h-full object-contain" />
                 </div>
-
-                {/* Badge: type + date in one line */}
-                <div style={{ backgroundColor: "#0284c7", color: "#ffffff", padding: "6px 14px", borderRadius: "12px", textAlign: "center", flexShrink: 0 }}>
-                  <span style={{ fontSize: "0.78rem", fontWeight: 900, display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap" }}>
-                    📑 كشف حساب
-                    <span style={{ color: "#bae6fd", fontFamily: "monospace", fontSize: "0.72rem" }}>{formatDate(new Date())}</span>
-                  </span>
+                <div>
+                  <h3 className="font-black text-slate-900 text-lg leading-tight">شركة الحوت</h3>
+                  <p className="text-xs text-sky-700 font-bold">للأدوات واللوحات الكهربائية ▪ تجارة وتوزيع الجملة</p>
                 </div>
+              </div>
+              <div className="text-left shrink-0">
+                <span className="inline-block bg-sky-900 text-white text-xs font-extrabold px-3.5 py-1.5 rounded-full shadow-sm">
+                  كشف حساب عميل
+                </span>
+                <p className="text-xs text-slate-400 font-semibold mt-1.5">
+                  التاريخ: {formatDate(new Date())}
+                </p>
               </div>
             </div>
 
-            {/* Customer Details */}
-            <div style={{ backgroundColor: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "12px", padding: "12px" }}>
-              {/* Name — prominent, no label */}
-              <p style={{ fontSize: "1rem", fontWeight: 900, color: "#0f172a", margin: "0 0 6px 0" }}>
-                {customer.name}
-              </p>
-              {customer.phone && (
-                <div className="text-xs" style={{ color: "#64748b", borderTop: "1px solid #e2e8f0", paddingTop: "6px" }}>
-                  📞 <strong style={{ color: "#0f172a" }}>{customer.phone}</strong>
-                </div>
-              )}
+            {/* Customer Info Card */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex items-center justify-between text-sm">
+              <div>
+                <span className="text-slate-500 font-semibold text-xs">اسم العميل: </span>
+                <strong className="text-slate-900 text-base font-black mr-1">{customer.name}</strong>
+              </div>
+              <div className="flex items-center gap-3">
+                {customer.phone && (
+                  <span className="text-slate-600 font-mono text-xs bg-white px-2.5 py-1 rounded-md border border-slate-200">
+                    📞 {customer.phone}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Financial Summary Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center text-xs">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                <p className="text-slate-500 font-semibold text-[11px] mb-0.5">رصيد افتتاحي</p>
+                <p className="font-extrabold text-slate-800 font-mono text-sm">{formatEGP(customer.opening_balance || 0)} ج</p>
+              </div>
+              <div className="bg-red-50 border border-red-200 rounded-xl p-2.5">
+                <p className="text-red-700 font-bold text-[11px] mb-0.5">إجمالي المبيعات (مدين)</p>
+                <p className="font-extrabold text-red-700 font-mono text-sm">{formatEGP(totalDebit)} ج</p>
+              </div>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5">
+                <p className="text-emerald-700 font-bold text-[11px] mb-0.5">إجمالي التحصيلات (دائن)</p>
+                <p className="font-extrabold text-emerald-700 font-mono text-sm">{formatEGP(totalCredit)} ج</p>
+              </div>
+              <div className="bg-sky-50 border-2 border-sky-600 rounded-xl p-2.5">
+                <p className="text-sky-900 font-black text-[11px] mb-0.5">الرصيد المتبقي النهائي</p>
+                <p className={`font-black font-mono text-base ${Number(finalBalance) > 0 ? "text-red-700" : Number(finalBalance) < 0 ? "text-emerald-700" : "text-sky-900"}`}>
+                  {formatEGP(finalBalance)} ج
+                </p>
+              </div>
             </div>
 
             {/* Transactions Table */}
-            <div style={{ borderRadius: "12px", border: "1px solid #cbd5e1", overflow: "hidden" }}>
+            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
               <div className="overflow-x-auto">
-                <table className="w-full text-xs text-right border-collapse">
+                <table className="w-full text-xs text-right border-collapse" style={{ tableLayout: "auto" }}>
                   <thead>
-                    <tr style={{ backgroundColor: "#002b61", color: "#ffffff" }}>
+                    <tr className="bg-slate-900 text-white font-bold text-[11px]">
+                      <th className="p-2.5 text-center w-8">#</th>
                       <th className="p-2.5">التاريخ</th>
-                      <th className="p-2.5">نوع الحركة</th>
-                      <th className="p-2.5">البيان</th>
-                      <th className="p-2.5 text-left">مدين</th>
-                      <th className="p-2.5 text-left">دائن</th>
-                      <th className="p-2.5 text-left">الرصيد</th>
+                      <th className="p-2.5">البيان / الحركة</th>
+                      <th className="p-2.5 text-center">المرجع</th>
+                      <th className="p-2.5 text-left text-red-300">مدين (+)</th>
+                      <th className="p-2.5 text-left text-emerald-300">دائن (-)</th>
+                      <th className="p-2.5 text-left text-sky-200 font-extrabold">الرصيد</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {entries.map((entry: any, index: number) => (
-                      <tr
-                        key={entry.id + "-" + index}
-                        style={{
-                          borderBottom: "1px solid #e2e8f0",
-                          backgroundColor: index % 2 === 0 ? "#ffffff" : "#f8fafc",
-                        }}
-                      >
-                        <td className="p-2.5 font-mono text-[11px]" style={{ whiteSpace: "nowrap" }}>
-                          {entry.type === "opening" ? "سابق" : formatDate(entry.date)}
-                        </td>
-                        <td
-                          className="p-2.5 font-bold"
-                          style={{ color: entry.type === "invoice" ? "#0284c7" : entry.type === "payment" ? "#16a34a" : "#dc2626" }}
+                    {entries && entries.length > 0 ? (
+                      entries.map((e: any, idx: number) => (
+                        <tr
+                          key={idx}
+                          className={`border-t border-slate-100 ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/70"}`}
                         >
-                          {entry.label}
-                        </td>
-                        <td className="p-2.5 text-gray-700">
-                          <span className="font-semibold">{entry.ref}</span>
-                          {entry.items && entry.items.length > 0 && (
-                            <div className="text-[10px] text-gray-500 mt-0.5">
-                              {entry.items.map((i: any) => `${i.product_name} (${i.quantity})`).join(" ▪ ")}
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-2.5 text-left font-mono font-bold" style={{ color: entry.debit > 0 ? "#0f172a" : "#94a3b8" }}>
-                          {entry.debit > 0 ? formatEGP(entry.debit) : "—"}
-                        </td>
-                        <td className="p-2.5 text-left font-mono font-bold" style={{ color: entry.credit > 0 ? "#16a34a" : "#94a3b8" }}>
-                          {entry.credit > 0 ? formatEGP(entry.credit) : "—"}
-                        </td>
-                        <td
-                          className="p-2.5 text-left font-mono font-black"
-                          style={{ color: entry.balance > 0 ? "#dc2626" : entry.balance < 0 ? "#16a34a" : "#0f172a" }}
-                        >
-                          {formatEGP(entry.balance)} ج
-                        </td>
-                      </tr>
-                    ))}
-                    {entries.length === 0 && (
+                          <td className="p-2.5 text-center text-slate-400 font-mono font-bold">{idx + 1}</td>
+                          <td className="p-2.5 font-mono text-slate-600 whitespace-nowrap">{formatDate(e.date)}</td>
+                          <td className="p-2.5 font-bold text-slate-800">
+                            <span>{e.label}</span>
+                            {e.items && e.items.length > 0 && (
+                              <span className="text-[10px] text-slate-500 font-normal mr-1.5 block sm:inline">
+                                ({e.items.length} أصناف)
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-2.5 text-center font-mono font-semibold text-sky-700 whitespace-nowrap">{e.ref}</td>
+                          <td className="p-2.5 text-left font-mono font-bold text-red-600">
+                            {e.debit > 0 ? `${formatEGP(e.debit)} ج` : "—"}
+                          </td>
+                          <td className="p-2.5 text-left font-mono font-bold text-emerald-600">
+                            {e.credit > 0 ? `${formatEGP(e.credit)} ج` : "—"}
+                          </td>
+                          <td className="p-2.5 text-left font-mono font-black text-slate-900 bg-slate-100/60">
+                            {formatEGP(e.balance)} ج
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
                       <tr>
-                        <td colSpan={6} className="p-6 text-center text-gray-400">لا توجد حركات مسجلة للعميل</td>
+                        <td colSpan={7} className="p-6 text-center text-slate-400 font-semibold">
+                          لا توجد حركات مسجلة لهذا العميل
+                        </td>
                       </tr>
                     )}
                   </tbody>
@@ -206,77 +249,58 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
               </div>
             </div>
 
-            {/* Summary — 3 columns, short labels */}
-            <div style={{ backgroundColor: "#f1f5f9", border: "2px solid #0284c7", borderRadius: "12px", overflow: "hidden" }}>
-              <div style={{ backgroundColor: "#0284c7", color: "#ffffff", textAlign: "center", padding: "6px 12px", fontSize: "0.75rem", fontWeight: 900 }}>
-                ملخص الحساب
-              </div>
-              <div className="grid grid-cols-3 text-center divide-x divide-x-reverse divide-slate-300" style={{ padding: "12px 8px" }}>
-                <div>
-                  <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 700, display: "block" }}>المبيعات</span>
-                  <span style={{ fontSize: "0.95rem", fontWeight: 900, color: "#0f172a", fontFamily: "monospace", display: "block", marginTop: "2px" }}>
-                    {formatEGP(totalDebit)} ج
-                  </span>
-                </div>
-                <div>
-                  <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 700, display: "block" }}>السداد</span>
-                  <span style={{ fontSize: "0.95rem", fontWeight: 900, color: "#16a34a", fontFamily: "monospace", display: "block", marginTop: "2px" }}>
-                    {formatEGP(totalCredit)} ج
-                  </span>
-                </div>
-                <div>
-                  <span style={{ fontSize: "11px", color: "#0284c7", fontWeight: 900, display: "block" }}>المتبقي</span>
-                  <span
-                    style={{
-                      fontSize: "1.1rem",
-                      fontWeight: 900,
-                      color: finalBalance > 0 ? "#dc2626" : finalBalance < 0 ? "#16a34a" : "#0f172a",
-                      fontFamily: "monospace",
-                      display: "block",
-                      marginTop: "2px",
-                    }}
-                  >
-                    {formatEGP(finalBalance)} ج
-                  </span>
-                </div>
-              </div>
+            {/* Footer note */}
+            <div className="pt-3 border-t border-slate-100 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-1">
+              <span className="font-bold text-slate-700">شركة الحوت للأدوات واللوحات الكهربائية</span>
+              <span className="text-[11px] text-slate-400">شكراً لتعاملكم معنا ▪ للإدارة والاستفسارات يرجى التواصل عبر الواتساب أو الهاتف</span>
             </div>
-
-            {/* Footer */}
-            <p style={{ textAlign: "center", paddingTop: "8px", fontSize: "11px", color: "#94a3b8", borderTop: "1px solid #e2e8f0" }}>
-              شركة الحوت للأدوات واللوحات الكهربائية ▪ تجارة وتوزيع الجملة
-            </p>
           </div>
         </div>
 
-        {/* ── Actions ─────────────────────────────────────────────────────── */}
-        <div className="px-3 pb-3 flex items-center gap-2 shrink-0 border-t border-slate-200 pt-3 bg-slate-50">
-          {/* WhatsApp — instant */}
-          <button
-            type="button"
-            onClick={handleShareWhatsapp}
-            className="flex-1 bg-green-600 hover:bg-green-700 active:scale-95 text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
-          >
-            📲 إرسال واتساب
-          </button>
+        {/* ── Actions Footer ───────────────────────────────────────────────── */}
+        <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* WhatsApp Native Share */}
+            <button
+              type="button"
+              onClick={handleShareWhatsapp}
+              disabled={sharingWhatsapp}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 active:scale-95 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            >
+              <span>{sharingWhatsapp ? "⏳" : "📲"}</span>
+              <span>{sharingWhatsapp ? "جاري التجهيز..." : "إرسال واتساب"}</span>
+            </button>
 
-          {/* Download image */}
-          <button
-            type="button"
-            onClick={handleDownloadImage}
-            disabled={downloadingImage}
-            className="bg-slate-600 hover:bg-slate-700 disabled:bg-slate-400 active:scale-95 text-white text-sm font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
-            title="تحميل صورة"
-          >
-            {downloadingImage ? "⏳" : "🖼️"}
-          </button>
+            {/* Download Image */}
+            <button
+              type="button"
+              onClick={handleDownloadImage}
+              disabled={downloadingImage}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 active:scale-95 text-white text-xs sm:text-sm font-bold px-3.5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              title="تحميل صورة كشف الحساب"
+            >
+              <span>{downloadingImage ? "⏳" : "🖼️"}</span>
+              <span>{downloadingImage ? "جاري..." : "صورة"}</span>
+            </button>
+
+            {/* Print Page */}
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="bg-slate-800 hover:bg-slate-900 active:scale-95 text-white text-xs sm:text-sm font-bold px-3.5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              title="طباعة"
+            >
+              <span>🖨️</span>
+              <span>طباعة</span>
+            </button>
+          </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 text-sm font-bold px-4 py-2.5 rounded-xl transition-all active:scale-95 cursor-pointer"
+            className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition-all active:scale-95 cursor-pointer"
           >
-            ✕
+            ✕ إغلاق
           </button>
         </div>
       </div>
