@@ -14,7 +14,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const payment = await prisma.customer_payments.findUnique({
       where: { id },
       include: {
-        customer: { select: { id: true, name: true, phone: true } },
+        customer: { select: { id: true, name: true, phone: true, whatsapp: true, opening_balance: true } },
         treasury: { select: { id: true, name: true } },
         creator: { select: { id: true, full_name: true } },
         invoice: { select: { id: true, invoice_number: true, total: true } },

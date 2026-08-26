@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
-import ModalShell from "@/components/ModalShell";
 
 interface PaymentReceiptModalProps {
   paymentId: string;
@@ -16,23 +15,23 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
 
   if (loading) {
     return (
-      <ModalShell onClose={onClose} wide>
-        <div className="p-8 text-center space-y-3">
+      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+        <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl p-8 text-center space-y-3 shadow-2xl max-w-sm w-full">
           <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="text-sm font-bold text-gray-600">جاري فتح إيصال التحصيل...</p>
         </div>
-      </ModalShell>
+      </div>
     );
   }
 
   if (!payment) {
     return (
-      <ModalShell onClose={onClose} wide>
-        <div className="p-8 text-center space-y-3">
+      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+        <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl p-8 text-center space-y-3 shadow-2xl max-w-sm w-full">
           <p className="text-sm font-bold text-red-600">❌ لم يتم العثور على إيصال التحصيل</p>
           <button onClick={onClose} className="btn-secondary text-xs">إغلاق</button>
         </div>
-      </ModalShell>
+      </div>
     );
   }
 
@@ -131,17 +130,18 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
   };
 
   return (
-    <ModalShell onClose={onClose} wide>
-      {/* Floating Close Button */}
-      <div className="relative">
-        <button
-          onClick={onClose}
-          className="absolute top-3 left-3 z-20 w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-950 text-white flex items-center justify-center transition-colors cursor-pointer shadow-lg"
-          title="إغلاق"
-        >
-          ✕
-        </button>
-      </div>
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-slate-200 relative">
+        {/* Floating Close Button */}
+        <div className="relative">
+          <button
+            onClick={onClose}
+            className="absolute top-3 left-3 z-20 w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-950 text-white flex items-center justify-center transition-colors cursor-pointer shadow-lg"
+            title="إغلاق"
+          >
+            ✕
+          </button>
+        </div>
 
       <div className="p-2 sm:p-4 max-h-[85vh] overflow-y-auto">
         <div
@@ -276,6 +276,7 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
           ✕ إغلاق
         </button>
       </div>
-    </ModalShell>
-  );
+    </div>
+  </div>
+);
 }
