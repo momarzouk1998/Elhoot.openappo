@@ -42,53 +42,63 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
   const payDate = payment.payment_date || payment.created_at;
   const customerName = payment.customer?.name || "العميل المحترم";
 
-  // ─── Native WhatsApp Share: Using Safe Canvas Capture ──────────────────────
+  // ─── Direct WhatsApp Share Handler ──────────────────────────────────────────
   const handleShareWhatsapp = async () => {
     if (sharingWhatsapp) return;
     const element = document.getElementById("receipt-sheet-" + paymentId);
     if (!element) return;
     try {
       setSharingWhatsapp(true);
-      const canvas = await captureElementToCanvas(element, { scale: 2.5 });
 
       const customerPhone = payment.customer?.whatsapp || payment.customer?.phone;
       const cleanPhone = customerPhone ? String(customerPhone).replace(/\D/g, "") : "";
       const formattedPhone = cleanPhone.startsWith("0") ? ("2" + cleanPhone) : cleanPhone;
       const receiptText = "مرحباً بك أستاذ " + customerName + "،\nمرفق إيصال تحصيل نقدية من شركة الحوت.\nالمبلغ المسلم: " + formatEGP(paid) + " ج\nالمتبقي النهائي: " + formatEGP(newBal) + " ج\nشكراً لتعاملكم معنا.";
 
-      // 1. Web Share API with File (Native mobile Chrome/Safari share directly to WhatsApp)
-      if (typeof navigator !== "undefined" && typeof (navigator as any).canShare === "function") {
+      // 1. Try Capturing Image for Native File Share
+      let file: File | null = null;
+      try {
+        const canvas = await captureElementToCanvas(element, { scale: 2 });
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+        if (blob) {
+          file = new File([blob], `إيصال_تحصيل_${customerName}.png`, { type: "image/png" });
+        }
+      } catch (canvasErr) {
+        console.warn("Canvas capture skipped for share:", canvasErr);
+      }
+
+      // 2. Native Share API (With File if supported)
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
         try {
-          const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
-          if (blob) {
-            const file = new File([blob as BlobPart], "إيصال_تحصيل_" + customerName + ".png", { type: "image/png" });
-            if ((navigator as any).canShare({ files: [file] })) {
-              await navigator.share({
-                files: [file],
-                title: "إيصال تحصيل شركة الحوت",
-                text: receiptText,
-              });
-              return;
-            }
-          }
-        } catch (shareErr: any) {
-          if (shareErr?.name === "AbortError") {
+          if (file && typeof (navigator as any).canShare === "function" && (navigator as any).canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: "إيصال تحصيل شركة الحوت",
+              text: receiptText,
+            });
             return;
           }
-          console.warn("Native share failed, falling back to download & WhatsApp link", shareErr);
+
+          // Native Share API (Text only fallback - always supported on mobile)
+          await navigator.share({
+            title: "إيصال تحصيل شركة الحوت",
+            text: receiptText,
+          });
+          return;
+        } catch (shareErr: any) {
+          if (shareErr?.name === "AbortError") {
+            return; // User cancelled share sheet
+          }
+          console.warn("Native share error, falling back to direct app link:", shareErr);
         }
       }
 
-      // 2. Fallback: Automatically download image & open WhatsApp directly
-      const link = document.createElement("a");
-      link.download = "إيصال_تحصيل_" + customerName + ".png";
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      // 3. Direct WhatsApp App Protocol (Opens WhatsApp app directly, never api.whatsapp.com)
+      const directAppUrl = formattedPhone
+        ? `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(receiptText)}`
+        : `whatsapp://send?text=${encodeURIComponent(receiptText)}`;
 
-      const waUrl = formattedPhone
-        ? ("https://wa.me/" + formattedPhone + "?text=" + encodeURIComponent(receiptText))
-        : ("https://wa.me/?text=" + encodeURIComponent(receiptText));
-      window.open(waUrl, "_blank");
+      window.location.href = directAppUrl;
     } catch (err) {
       console.error(err);
       alert("❌ حدث خطأ أثناء تجهيز إيصال التحصيل");
@@ -117,7 +127,7 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
     }
   };
 
-  // ─── Print page: opens styled server-rendered page ─────────────────────────
+  // ─── Print page ────────────────────────────────────────────────────────────
   const handlePrint = () => {
     window.open(`/print/payment/customer/${paymentId}`, "_blank");
   };
@@ -218,7 +228,7 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
 
         {/* ── Actions ─────────────────────────────────────────────────────── */}
         <div className="px-3 pb-3 flex items-center gap-2">
-          {/* WhatsApp — native share sheet matching Invoice modal */}
+          {/* WhatsApp — native share */}
           <button
             type="button"
             onClick={handleShareWhatsapp}

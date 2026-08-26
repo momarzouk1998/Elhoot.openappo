@@ -585,39 +585,53 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
       const customerName = invData.customer?.name || "العميل المحترم";
       const invoiceText = "مرحباً بك أستاذ " + customerName + "،\nمرفق فاتورة شركة الحوت رقم #" + invData.invoice_number + "\nالمبلغ المطلوب: " + formatEGP(currentInvoiceTotal) + " ج\nشكراً لتعاملكم معنا.";
 
-      // 1. Web Share API with File (Native mobile Chrome/Safari share directly to WhatsApp)
-      if (typeof navigator !== "undefined" && typeof (navigator as any).canShare === "function") {
+      // 1. Try Capturing Image for Native File Share
+      let file: File | null = null;
+      try {
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+        if (blob) {
+          file = new File([blob], "فاتورة_شركة_الحوت_" + invData.invoice_number + ".png", { type: "image/png" });
+        }
+      } catch (fileErr) {
+        console.warn("File creation error:", fileErr);
+      }
+
+      // 2. Web Share API (File if supported, else text)
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
         try {
-          const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
-          if (blob) {
-            const file = new File([blob as BlobPart], "فاتورة_شركة_الحوت_" + invData.invoice_number + ".png", { type: "image/png" });
-            if ((navigator as any).canShare({ files: [file] })) {
-              await navigator.share({
-                files: [file],
-                title: "فاتورة شركة الحوت #" + invData.invoice_number,
-                text: invoiceText,
-              });
-              return;
-            }
+          if (file && typeof (navigator as any).canShare === "function" && (navigator as any).canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: "فاتورة شركة الحوت #" + invData.invoice_number,
+              text: invoiceText,
+            });
+            return;
           }
+
+          // Fallback to native text share sheet
+          await navigator.share({
+            title: "فاتورة شركة الحوت #" + invData.invoice_number,
+            text: invoiceText,
+          });
+          return;
         } catch (shareErr: any) {
           if (shareErr?.name === "AbortError") {
             return;
           }
-          console.warn("Native share failed, falling back to download & WhatsApp link", shareErr);
+          console.warn("Native share error, falling back to direct app:", shareErr);
         }
       }
 
-      // 2. Fallback: Automatically download image & open WhatsApp directly
+      // 2. Fallback: Automatically download image & open WhatsApp app directly
       const link = document.createElement("a");
       link.download = "فاتورة شركة الحوت - #" + invData.invoice_number + ".png";
       link.href = canvas.toDataURL("image/png");
       link.click();
 
-      const waUrl = formattedPhone
-        ? ("https://wa.me/" + formattedPhone + "?text=" + encodeURIComponent(invoiceText))
-        : ("https://wa.me/?text=" + encodeURIComponent(invoiceText));
-      window.open(waUrl, "_blank");
+      const directAppUrl = formattedPhone
+        ? ("whatsapp://send?phone=" + formattedPhone + "&text=" + encodeURIComponent(invoiceText))
+        : ("whatsapp://send?text=" + encodeURIComponent(invoiceText));
+      window.location.href = directAppUrl;
     } catch (err) {
       console.error(err);
       alert("❌ حدث خطأ أثناء إرسال الفاتورة عبر واتساب");

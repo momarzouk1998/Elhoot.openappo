@@ -56,12 +56,12 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
       const receiptText = `مرحباً بك أستاذ ${customerName}،\nمرفق كشف حساب شركة الحوت للأدوات الكهربائية.\nالمتبقي النهائي: ${formatEGP(finalBalance)} ج\nشكراً لتعاملكم معنا.`;
 
       // 1. Native Mobile Web Share API
-      if (typeof navigator !== "undefined" && typeof (navigator as any).canShare === "function") {
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
         try {
           const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
           if (blob) {
             const file = new File([blob as BlobPart], `كشف_حساب_${customerName}.png`, { type: "image/png" });
-            if ((navigator as any).canShare({ files: [file] })) {
+            if (typeof (navigator as any).canShare === "function" && (navigator as any).canShare({ files: [file] })) {
               await navigator.share({
                 files: [file],
                 title: "كشف حساب شركة الحوت",
@@ -70,22 +70,29 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
               return;
             }
           }
+
+          // Fallback to native text share sheet
+          await navigator.share({
+            title: "كشف حساب شركة الحوت",
+            text: receiptText,
+          });
+          return;
         } catch (shareErr: any) {
           if (shareErr?.name === "AbortError") return;
-          console.warn("Native share failed, fallback to direct download", shareErr);
+          console.warn("Native share error, falling back to direct app link:", shareErr);
         }
       }
 
-      // 2. Fallback: Auto download image and open WhatsApp
+      // 2. Fallback: Auto download image and open WhatsApp app directly
       const link = document.createElement("a");
       link.download = `كشف_حساب_${customerName}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
 
-      const waUrl = formattedPhone
-        ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(receiptText)}`
-        : `https://wa.me/?text=${encodeURIComponent(receiptText)}`;
-      window.open(waUrl, "_blank");
+      const directAppUrl = formattedPhone
+        ? `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(receiptText)}`
+        : `whatsapp://send?text=${encodeURIComponent(receiptText)}`;
+      window.location.href = directAppUrl;
     } catch (err) {
       console.error(err);
       alert("❌ حدث خطأ أثناء تجهيز كشف الحساب للمشاركة");
