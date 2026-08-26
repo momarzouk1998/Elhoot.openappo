@@ -36,7 +36,7 @@ export default function PurchasesPage() {
   return (
     <div className="space-y-4">
       {/* Tab bar */}
-      <div className="flex gap-0 border-b border-gray-200">
+      <div className="flex gap-0 border-b border-gray-200 overflow-x-auto whitespace-nowrap">
         <TabBtn active={tab === "purchases"} onClick={() => setTab("purchases")} color="purple">
           📥 فواتير المشتريات
         </TabBtn>
@@ -59,7 +59,7 @@ function TabBtn({ active, onClick, color, children }: {
     : "border-nazlawy-500 text-nazlawy-600 bg-nazlawy-50";
   return (
     <button onClick={onClick}
-      className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+      className={`px-3 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap flex-1 sm:flex-initial ${
         active ? activeClass : "border-transparent text-gray-500 hover:text-gray-700"
       }`}>
       {children}

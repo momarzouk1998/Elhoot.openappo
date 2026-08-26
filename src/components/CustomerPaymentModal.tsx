@@ -165,7 +165,7 @@ export default function CustomerPaymentModal({
           )}
 
           {/* Amount and Method */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-bold text-gray-700 block mb-1">المبلغ المحصل (ج) *</label>
               <input
@@ -197,7 +197,7 @@ export default function CustomerPaymentModal({
           </div>
 
           {/* Treasury & Payment Date */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-bold text-gray-700 block mb-1">الخزينة المستلمة *</label>
               <select

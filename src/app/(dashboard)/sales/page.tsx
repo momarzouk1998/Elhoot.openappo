@@ -44,7 +44,7 @@ export default function SalesPage() {
   return (
     <div className="space-y-4">
       {/* Tab bar */}
-      <div className="flex gap-0 border-b border-gray-200">
+      <div className="flex gap-0 border-b border-gray-200 overflow-x-auto whitespace-nowrap">
         <TabBtn active={tab === "sales"} onClick={() => setTab("sales")} color="nazlawy">
           🛒 فواتير المبيعات
         </TabBtn>
@@ -68,7 +68,7 @@ function TabBtn({ active, onClick, color, children }: {
   return (
     <button
       onClick={onClick}
-      className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+      className={`px-3 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap flex-1 sm:flex-initial ${
         active ? activeClass : "border-transparent text-gray-500 hover:text-gray-700"
       }`}
     >
@@ -191,13 +191,15 @@ function SalesTab({ isAdmin }: { isAdmin: boolean }) {
                     <span>👁️</span>
                     <span>عرض الفاتورة</span>
                   </button>
-                  <button
-                    onClick={() => { setOpenInvoice(inv); setOpenEditMode(true); }}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
-                  >
-                    <span>✏️</span>
-                    <span>تعديل</span>
-                  </button>
+                  {inv.status !== 'مكتملة' && (
+                    <button
+                      onClick={() => { setOpenInvoice(inv); setOpenEditMode(true); }}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                    >
+                      <span>✏️</span>
+                      <span>تعديل</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => handleDeleteOrCancel(inv)}
                     className="text-xs px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
@@ -237,14 +239,16 @@ function SalesTab({ isAdmin }: { isAdmin: boolean }) {
                     <td className="p-3"><span className={`badge ${statusColor(inv.status)}`}>{inv.status}</span></td>
                     <td className="p-3" onClick={e => e.stopPropagation()}>
                       <div className="flex gap-2 items-center">
-                        <button
-                          onClick={() => { setOpenInvoice(inv); setOpenEditMode(true); }}
-                          className="text-xs px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-bold flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
-                          title="تعديل الفاتورة"
-                        >
-                          <span>✏️</span>
-                          <span>تعديل</span>
-                        </button>
+                        {inv.status !== 'مكتملة' && (
+                          <button
+                            onClick={() => { setOpenInvoice(inv); setOpenEditMode(true); }}
+                            className="text-xs px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-bold flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                            title="تعديل الفاتورة"
+                          >
+                            <span>✏️</span>
+                            <span>تعديل</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDeleteOrCancel(inv)}
                           className="text-xs px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 font-bold flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
@@ -1115,24 +1119,13 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
 
       {/* Modal Actions Footer (no-print) */}
       <div className="p-3 bg-slate-100 border-t border-slate-200 no-print rounded-b-2xl">
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
-          {!isCancelled && !editing && (
-            <button
-              onClick={() => setShowPaymentModal(true)}
-              className="col-span-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
-              title="تحصيل"
-            >
-              <span>💳</span>
-              <span>تحصيل</span>
-            </button>
-          )}
-
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {!editing && (
             <>
               <button
                 onClick={handleShareWhatsapp}
                 disabled={sharingWhatsapp}
-                className="col-span-1 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="flex-1 sm:flex-initial bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
                 title="إرسال واتساب"
               >
                 <span>{sharingWhatsapp ? "⏳" : "📲"}</span>
@@ -1142,29 +1135,11 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
               <button
                 onClick={handleDirectDownloadImage}
                 disabled={downloadingImage}
-                className="col-span-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white text-sm font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
                 title="تحميل صورة"
               >
                 <span>{downloadingImage ? "⏳" : "🖼️"}</span>
                 <span>{downloadingImage ? "جاري..." : "صورة"}</span>
-              </button>
-
-              <button
-                onClick={handleDirectDownloadPdf}
-                disabled={downloadingPdf}
-                className="col-span-1 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
-                title="تحميل PDF"
-              >
-                <span>{downloadingPdf ? "⏳" : "📄"}</span>
-                <span>{downloadingPdf ? "جاري..." : "PDF"}</span>
-              </button>
-
-              <button
-                onClick={handlePrint}
-                className="col-span-1 bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
-              >
-                <span>🖨️</span>
-                <span>طباعة</span>
               </button>
             </>
           )}

@@ -103,7 +103,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Row 1 — Sales & Cash */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard
           iconKey="sales"
           label="مبيعات اليوم"
@@ -185,7 +185,7 @@ export default async function DashboardPage() {
       )}
 
       {/* Row 4 — System Statistics Counts */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3.5 pt-2">
         <SmallStat iconKey="tags" label="المنتجات" value={totalProducts} />
         <SmallStat iconKey="users" label="العملاء" value={totalCustomers} />
         <SmallStat iconKey="factory" label="الموردين" value={totalSuppliers} />

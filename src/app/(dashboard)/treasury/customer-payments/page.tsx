@@ -133,7 +133,7 @@ function Form({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }
             {filtered.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div><label className="text-sm font-medium block mb-1">المبلغ *</label><input type="number" step="0.01" className="input-field" value={f.amount === 0 ? '' : f.amount} onChange={(e) => setF({ ...f, amount: parseFloat(e.target.value) || 0 })} placeholder="0" /></div>
           <div>
             <label className="text-sm font-medium block mb-1">طريقة الدفع</label>
@@ -142,7 +142,7 @@ function Form({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-sm font-medium block mb-1">الخزينة *</label>
             <select className="input-field" value={f.treasury_id} onChange={(e) => setF({ ...f, treasury_id: e.target.value })}>

@@ -265,7 +265,7 @@ export default function NewPurchasePage() {
           </div>
           <textarea className="input-field text-xs" rows={2} placeholder="ملاحظات (اختياري)" value={notes} onChange={(e) => setNotes(e.target.value)} />
           <button onClick={save} disabled={saving || cart.length === 0} className="btn-primary w-full">
-            {saving ? '⏳ جاري الحفظ...' : `✅ حفظ الفاتورة (${formatEGP(total)} ج)`}
+            {saving ? '⏳ جاري الحفظ...' : 'حفظ الفاتورة'}
           </button>
         </div>
       </div>

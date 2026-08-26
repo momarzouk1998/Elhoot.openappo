@@ -593,7 +593,7 @@ export default function POSPage() {
 
           <textarea className="input-field text-xs" rows={2} placeholder="ملاحظات (اختياري)" value={notes} onChange={(e) => setNotes(e.target.value)} />
           <button onClick={save} disabled={saving || cart.length === 0} className="btn-primary w-full">
-            {saving ? '⏳ جاري الحفظ...' : ((status === 'مكتملة' && invoiceType !== 'عرض سعر') ? `✅ حفظ وطباعة (${formatEGP(total)} ج)` : `💾 حفظ كمسودة (${formatEGP(total)} ج)`)}
+            {saving ? '⏳ جاري الحفظ...' : 'حفظ الفاتورة'}
           </button>
         </div>
       </div>

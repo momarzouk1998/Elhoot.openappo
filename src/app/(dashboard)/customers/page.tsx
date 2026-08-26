@@ -80,44 +80,35 @@ function CustomersTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <p className="text-sm text-gray-500">{data?.total ?? '...'} عميل</p>
-        <div className="flex gap-2">
-          <a href="/print/statement/all-customers" target="_blank" className="btn-secondary text-sm flex items-center gap-1">
-            📋 كشف حساب كل العملاء
+      <div className="flex items-center justify-between flex-wrap gap-2.5">
+        <p className="text-sm font-semibold text-gray-500">{data?.total ?? '...'} عميل</p>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button
+            onClick={() => setShow(true)}
+            className="flex-1 sm:flex-initial bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-sm px-4 py-2.5 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <span>➕</span>
+            <span>إضافة عميل جديد</span>
+          </button>
+          <a
+            href="/print/statement/all-customers"
+            target="_blank"
+            className="flex-1 sm:flex-initial bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm px-4 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
+          >
+            <span>📑</span>
+            <span>كشف حساب كل العملاء</span>
           </a>
-          <button onClick={() => setShow(true)} className="btn-primary">+ إضافة عميل</button>
         </div>
       </div>
 
       <div className="card flex flex-col gap-3 md:flex-row">
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 ابحث..." className="input-field md:flex-1" autoFocus />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 ابحث بالاسم أو الهاتف..." className="input-field md:flex-1" autoFocus />
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-field md:w-56">
           <option value="all">كل الحالات</option>
           <option value="unpaid">لم يتم السداد</option>
           <option value="overpaid">مدفوعات زائدة</option>
           <option value="cleared">حساب خالص</option>
         </select>
-      </div>
-
-      {/* كاردات إجماليات تتحرك مع البحث/الفلتر */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="card p-4">
-          <div className="text-xs text-gray-500">عدد العملاء</div>
-          <div className="text-2xl font-extrabold text-slate-650">{visibleCustomers.length}</div>
-        </div>
-        <div className="card p-4">
-          <div className="text-xs text-gray-500">إجمالي الديون (لينا)</div>
-          <div className="text-2xl font-extrabold text-red-700">{formatEGP(visibleCustomers.reduce((s, c) => s + (Number(c.balance) > 0 ? Number(c.balance) : 0), 0))} ج</div>
-        </div>
-        <div className="card p-4">
-          <div className="text-xs text-gray-500">عملاء مدينين</div>
-          <div className="text-2xl font-extrabold text-orange-700">{visibleCustomers.filter(c => Number(c.balance) > 0.01).length}</div>
-        </div>
-        <div className="card p-4">
-          <div className="text-xs text-gray-500">مدفوعات مقدمة (علينا)</div>
-          <div className="text-2xl font-extrabold text-green-700">{formatEGP(visibleCustomers.reduce((s, c) => s + (Number(c.balance) < 0 ? Math.abs(Number(c.balance)) : 0), 0))} ج</div>
-        </div>
       </div>
 
       {loading ? <div className="card text-center py-12 text-gray-500">⏳ جاري التحميل...</div> : (
