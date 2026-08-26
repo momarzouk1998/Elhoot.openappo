@@ -3,6 +3,8 @@
  * Converts oklch/color()/oklab functions to standard rgb() format,
  * completely shielding html2canvas from unsupported CSS color syntax
  * while preserving 100% of stylesheet layout, typography, and geometry.
+ *
+ * Supports renderWidth option to enforce full desktop/document width on mobile captures.
  */
 
 function convertCssColorToRgb(str: string, ctx: CanvasRenderingContext2D | null): string {
@@ -26,6 +28,7 @@ export async function captureElementToCanvas(
   options: {
     scale?: number;
     backgroundColor?: string;
+    renderWidth?: number;
   } = {}
 ): Promise<HTMLCanvasElement> {
   const html2canvas = (await import("html2canvas")).default;
@@ -38,11 +41,20 @@ export async function captureElementToCanvas(
     backgroundColor: options.backgroundColor ?? "#ffffff",
     scrollX: 0,
     scrollY: 0,
+    windowWidth: options.renderWidth ? Math.max(options.renderWidth + 100, 1024) : undefined,
     onclone: (clonedDoc, clonedElement) => {
       const helperCanvas = clonedDoc.createElement("canvas");
       const ctx = helperCanvas.getContext("2d");
 
-      // 1. Intercept getComputedStyle in the cloned document window with a Proxy
+      // 1. Enforce high-res document layout width if requested (prevents mobile squishing)
+      if (options.renderWidth) {
+        clonedElement.style.setProperty("width", `${options.renderWidth}px`, "important");
+        clonedElement.style.setProperty("min-width", `${options.renderWidth}px`, "important");
+        clonedElement.style.setProperty("max-width", `${options.renderWidth}px`, "important");
+        clonedElement.style.setProperty("box-sizing", "border-box", "important");
+      }
+
+      // 2. Intercept getComputedStyle in the cloned document window with a Proxy
       const docView = clonedDoc.defaultView || window;
       if (docView && docView.getComputedStyle) {
         const originalGetComputedStyle = docView.getComputedStyle.bind(docView);
@@ -72,7 +84,7 @@ export async function captureElementToCanvas(
         };
       }
 
-      // 2. Sanitize any style tags inside the cloned document
+      // 3. Sanitize any style tags inside the cloned document
       try {
         const styleTags = clonedDoc.querySelectorAll("style");
         styleTags.forEach((styleTag) => {
@@ -84,7 +96,7 @@ export async function captureElementToCanvas(
         console.warn("Style tag sanitization warning:", err);
       }
 
-      // 3. Walk all elements in the cloned document and fix any inline styles with oklch
+      // 4. Walk all elements in the cloned document and fix any inline styles with oklch
       try {
         const allCloned = [clonedElement, ...Array.from(clonedElement.querySelectorAll("*"))] as HTMLElement[];
         allCloned.forEach((el) => {

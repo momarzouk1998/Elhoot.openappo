@@ -48,7 +48,7 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
 
     try {
       setSharingWhatsapp(true);
-      const canvas = await captureElementToCanvas(element, { scale: 2.5 });
+      const canvas = await captureElementToCanvas(element, { scale: 2.5, renderWidth: 800 });
 
       const receiptText = `مرحباً بك أستاذ ${customerName}،\nمرفق كشف حساب شركة الحوت للأدوات الكهربائية.\nالمتبقي النهائي: ${formatEGP(finalBalance)} ج\nشكراً لتعاملكم معنا.`;
 
@@ -100,7 +100,7 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
     if (!element) return;
     try {
       setDownloadingImage(true);
-      const canvas = await captureElementToCanvas(element, { scale: 2.5 });
+      const canvas = await captureElementToCanvas(element, { scale: 2.5, renderWidth: 800 });
       const link = document.createElement("a");
       link.download = `كشف_حساب_${customerName}.png`;
       link.href = canvas.toDataURL("image/png");
@@ -127,12 +127,21 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
         onClick={(e) => e.stopPropagation()}
         className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]"
       >
-        {/* ── Statement Sheet ─────────────────────────────────────────────── */}
-        <div className="p-3 sm:p-5 overflow-y-auto flex-1">
+        {/* ── Statement Sheet Wrapper with horizontal scroll for mobile ──── */}
+        <div className="p-2 sm:p-5 overflow-x-auto overflow-y-auto flex-1 bg-slate-100/50">
           <div
             id={sheetId}
-            className="rounded-xl p-4 sm:p-6 text-right space-y-4"
-            style={{ direction: "rtl", fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif", color: "#0f172a", backgroundColor: "#ffffff", border: "1px solid #e2e8f0" }}
+            className="rounded-xl p-4 sm:p-6 text-right space-y-4 mx-auto"
+            style={{
+              direction: "rtl",
+              fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
+              color: "#0f172a",
+              backgroundColor: "#ffffff",
+              border: "1px solid #e2e8f0",
+              minWidth: "720px",
+              maxWidth: "800px",
+              boxSizing: "border-box",
+            }}
           >
             {/* Header */}
             <div className="pb-4 flex items-center justify-between gap-3" style={{ borderBottom: "2px solid #f1f5f9" }}>
@@ -171,22 +180,22 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
             </div>
 
             {/* Financial Summary Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center text-xs" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "10px" }}>
-              <div className="rounded-xl p-2.5" style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "10px" }}>
+              <div className="rounded-xl p-2.5 text-center" style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
                 <p className="text-[11px] mb-0.5 font-semibold" style={{ color: "#64748b" }}>رصيد افتتاحي</p>
-                <p className="font-extrabold font-mono text-sm" style={{ color: "#1e293b" }}>{formatEGP(customer.opening_balance || 0)} ج</p>
+                <p className="font-extrabold font-mono text-sm" style={{ color: "#1e293b", whiteSpace: "nowrap" }}>{formatEGP(customer.opening_balance || 0)} ج</p>
               </div>
-              <div className="rounded-xl p-2.5" style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca" }}>
+              <div className="rounded-xl p-2.5 text-center" style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca" }}>
                 <p className="text-[11px] mb-0.5 font-bold" style={{ color: "#b91c1c" }}>إجمالي المبيعات (مدين)</p>
-                <p className="font-extrabold font-mono text-sm" style={{ color: "#dc2626" }}>{formatEGP(totalDebit)} ج</p>
+                <p className="font-extrabold font-mono text-sm" style={{ color: "#dc2626", whiteSpace: "nowrap" }}>{formatEGP(totalDebit)} ج</p>
               </div>
-              <div className="rounded-xl p-2.5" style={{ backgroundColor: "#ecfdf5", border: "1px solid #a7f3d0" }}>
+              <div className="rounded-xl p-2.5 text-center" style={{ backgroundColor: "#ecfdf5", border: "1px solid #a7f3d0" }}>
                 <p className="text-[11px] mb-0.5 font-bold" style={{ color: "#047857" }}>إجمالي التحصيلات (دائن)</p>
-                <p className="font-extrabold font-mono text-sm" style={{ color: "#059669" }}>{formatEGP(totalCredit)} ج</p>
+                <p className="font-extrabold font-mono text-sm" style={{ color: "#059669", whiteSpace: "nowrap" }}>{formatEGP(totalCredit)} ج</p>
               </div>
-              <div className="rounded-xl p-2.5" style={{ backgroundColor: "#f0f9ff", border: "2px solid #0284c7" }}>
+              <div className="rounded-xl p-2.5 text-center" style={{ backgroundColor: "#f0f9ff", border: "2px solid #0284c7" }}>
                 <p className="text-[11px] mb-0.5 font-black" style={{ color: "#0369a1" }}>الرصيد المتبقي النهائي</p>
-                <p className="font-black font-mono text-base" style={{ color: "#0c4a6e" }}>
+                <p className="font-black font-mono text-base" style={{ color: "#0c4a6e", whiteSpace: "nowrap" }}>
                   {formatEGP(finalBalance)} ج
                 </p>
               </div>
@@ -194,16 +203,16 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
 
             {/* Transactions Table */}
             <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e2e8f0", backgroundColor: "#ffffff" }}>
-              <table className="w-full text-xs text-right border-collapse" style={{ tableLayout: "auto", width: "100%" }}>
+              <table className="w-full text-xs text-right border-collapse" style={{ tableLayout: "fixed", width: "100%" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#0f172a", color: "#ffffff", fontWeight: "bold", fontSize: "11px" }}>
-                    <th style={{ padding: "10px", textAlign: "center", width: "32px" }}>#</th>
-                    <th style={{ padding: "10px", whiteSpace: "nowrap" }}>التاريخ</th>
-                    <th style={{ padding: "10px" }}>البيان / الحركة</th>
-                    <th style={{ padding: "10px", textAlign: "center", whiteSpace: "nowrap" }}>المرجع</th>
-                    <th style={{ padding: "10px", textAlign: "left", color: "#fca5a5" }}>مدين (+)</th>
-                    <th style={{ padding: "10px", textAlign: "left", color: "#6ee7b7" }}>دائن (-)</th>
-                    <th style={{ padding: "10px", textAlign: "left", color: "#bae6fd", fontWeight: 900 }}>الرصيد</th>
+                    <th style={{ padding: "10px", textAlign: "center", width: "36px" }}>#</th>
+                    <th style={{ padding: "10px", width: "85px", whiteSpace: "nowrap" }}>التاريخ</th>
+                    <th style={{ padding: "10px", width: "auto" }}>البيان / الحركة</th>
+                    <th style={{ padding: "10px", textAlign: "center", width: "70px", whiteSpace: "nowrap" }}>المرجع</th>
+                    <th style={{ padding: "10px", textAlign: "left", width: "95px", color: "#fca5a5" }}>مدين (+)</th>
+                    <th style={{ padding: "10px", textAlign: "left", width: "95px", color: "#6ee7b7" }}>دائن (-)</th>
+                    <th style={{ padding: "10px", textAlign: "left", width: "100px", color: "#bae6fd", fontWeight: 900 }}>الرصيد</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -226,13 +235,13 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
                               )}
                             </td>
                             <td style={{ padding: "8px 10px", textAlign: "center", color: "#0369a1", fontWeight: "bold", whiteSpace: "nowrap", fontFamily: "monospace" }}>{e.ref}</td>
-                            <td style={{ padding: "8px 10px", textAlign: "left", color: "#dc2626", fontWeight: "bold", fontFamily: "monospace" }}>
+                            <td style={{ padding: "8px 10px", textAlign: "left", color: "#dc2626", fontWeight: "bold", fontFamily: "monospace", whiteSpace: "nowrap" }}>
                               {e.debit > 0 ? `${formatEGP(e.debit)} ج` : "—"}
                             </td>
-                            <td style={{ padding: "8px 10px", textAlign: "left", color: "#059669", fontWeight: "bold", fontFamily: "monospace" }}>
+                            <td style={{ padding: "8px 10px", textAlign: "left", color: "#059669", fontWeight: "bold", fontFamily: "monospace", whiteSpace: "nowrap" }}>
                               {e.credit > 0 ? `${formatEGP(e.credit)} ج` : "—"}
                             </td>
-                            <td style={{ padding: "8px 10px", textAlign: "left", color: "#0f172a", fontWeight: 900, fontFamily: "monospace", backgroundColor: "#f1f5f9" }}>
+                            <td style={{ padding: "8px 10px", textAlign: "left", color: "#0f172a", fontWeight: 900, fontFamily: "monospace", backgroundColor: "#f1f5f9", whiteSpace: "nowrap" }}>
                               {formatEGP(e.balance)} ج
                             </td>
                           </tr>
@@ -241,22 +250,22 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
                             <tr style={{ backgroundColor: "#f8fafc" }}>
                               <td colSpan={7} style={{ padding: "2px 10px 10px 10px", borderBottom: "1px solid #e2e8f0" }}>
                                 <div style={{ backgroundColor: "#ffffff", borderRadius: "8px", border: "1px solid #cbd5e1", padding: "6px 10px", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
-                                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+                                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px", tableLayout: "fixed" }}>
                                     <thead>
                                       <tr style={{ backgroundColor: "#f1f5f9", color: "#475569", fontWeight: "bold", borderBottom: "1px solid #cbd5e1" }}>
-                                        <th style={{ padding: "4px 8px", textAlign: "right" }}>الصنف</th>
+                                        <th style={{ padding: "4px 8px", textAlign: "right", width: "45%" }}>الصنف</th>
                                         <th style={{ padding: "4px 8px", textAlign: "center", width: "15%" }}>الكمية</th>
-                                        <th style={{ padding: "4px 8px", textAlign: "left", width: "18%" }}>السعر</th>
+                                        <th style={{ padding: "4px 8px", textAlign: "left", width: "20%" }}>السعر</th>
                                         <th style={{ padding: "4px 8px", textAlign: "left", width: "20%" }}>الإجمالي</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       {e.items.map((it: any, itIdx: number) => (
                                         <tr key={itIdx} style={{ borderBottom: itIdx < e.items.length - 1 ? "1px solid #f1f5f9" : "none" }}>
-                                          <td style={{ padding: "4px 8px", fontWeight: "bold", color: "#334155" }}>{it.product_name}</td>
+                                          <td style={{ padding: "4px 8px", fontWeight: "bold", color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.product_name}</td>
                                           <td style={{ padding: "4px 8px", textAlign: "center", fontFamily: "monospace", fontWeight: 900, color: "#0f172a" }}>{it.quantity}</td>
-                                          <td style={{ padding: "4px 8px", textAlign: "left", fontFamily: "monospace", color: "#64748b" }}>{formatEGP(it.unit_price)} ج</td>
-                                          <td style={{ padding: "4px 8px", textAlign: "left", fontFamily: "monospace", fontWeight: "bold", color: "#0f172a" }}>{formatEGP(it.line_total)} ج</td>
+                                          <td style={{ padding: "4px 8px", textAlign: "left", fontFamily: "monospace", color: "#64748b", whiteSpace: "nowrap" }}>{formatEGP(it.unit_price)} ج</td>
+                                          <td style={{ padding: "4px 8px", textAlign: "left", fontFamily: "monospace", fontWeight: "bold", color: "#0f172a", whiteSpace: "nowrap" }}>{formatEGP(it.line_total)} ج</td>
                                         </tr>
                                       ))}
                                     </tbody>
