@@ -54,6 +54,20 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
         backgroundColor: "#ffffff",
         scrollX: 0,
         scrollY: 0,
+        onclone: (clonedDoc) => {
+          const elements = clonedDoc.querySelectorAll('*');
+          elements.forEach((el: any) => {
+            if (el.style) {
+              const computed = window.getComputedStyle(el);
+              if (computed.backgroundColor && computed.backgroundColor.includes('oklch')) {
+                el.style.backgroundColor = '#ffffff';
+              }
+              if (computed.color && computed.color.includes('oklch')) {
+                el.style.color = '#0f172a';
+              }
+            }
+          });
+        },
       });
 
       const customerPhone = payment.customer?.whatsapp || payment.customer?.phone;
@@ -132,18 +146,7 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-slate-200 relative">
-        {/* Floating Close Button */}
-        <div className="relative">
-          <button
-            onClick={onClose}
-            className="absolute top-3 left-3 z-20 w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-950 text-white flex items-center justify-center transition-colors cursor-pointer shadow-lg"
-            title="إغلاق"
-          >
-            ✕
-          </button>
-        </div>
-
-      <div className="p-2 sm:p-4 max-h-[85vh] overflow-y-auto">
+        <div className="p-2 sm:p-4 max-h-[85vh] overflow-y-auto">
         <div
           id={"receipt-sheet-" + paymentId}
           className="bg-white rounded-2xl border border-slate-300 shadow-md p-4 sm:p-6 text-right space-y-4 max-w-2xl mx-auto"

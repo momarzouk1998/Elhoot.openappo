@@ -6,6 +6,7 @@ import { useApi, useApiMutation } from "@/hooks/useApi";
 import { formatEGP, formatDate, statusColor } from "@/lib/format";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PaymentReceiptModal from "@/components/PaymentReceiptModal";
+import CustomerStatementModal from "@/components/CustomerStatementModal";
 
 interface CustomerDetail {
   id: string;
@@ -34,6 +35,7 @@ export default function CustomerDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showCollect, setShowCollect] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showStatementModal, setShowStatementModal] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
@@ -72,7 +74,7 @@ export default function CustomerDetailPage() {
         </h1>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => window.open(`/print/statement/customer/${customer.id}`, '_blank')}
+            onClick={() => setShowStatementModal(true)}
             className="text-xs sm:text-sm font-bold px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-300 flex items-center gap-1 shadow-sm cursor-pointer"
           >
             <span>🖨️</span>
@@ -137,6 +139,10 @@ export default function CustomerDetailPage() {
 
       {showEdit && (
         <EditForm customer={customer} onClose={() => setShowEdit(false)} onSaved={() => { setShowEdit(false); reloadCustomer(); }} />
+      )}
+
+      {showStatementModal && (
+        <CustomerStatementModal customerId={customer.id} onClose={() => setShowStatementModal(false)} />
       )}
     </div>
   );

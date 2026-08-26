@@ -5,6 +5,7 @@ import { useApi, useApiMutation } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
 import Pagination from "@/components/Pagination";
 import PaymentReceiptModal from "@/components/PaymentReceiptModal";
+import CustomerStatementModal from "@/components/CustomerStatementModal";
 
 /* ============================================
    أنواع مشتركة
@@ -61,6 +62,7 @@ function CustomersTab() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [show, setShow] = useState(false);
+  const [selectedStatementCustomerId, setSelectedStatementCustomerId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -184,6 +186,10 @@ function CustomersTab() {
       )}
 
       {show && <CustomerForm onClose={() => setShow(false)} onSaved={() => { setShow(false); refetch(); }} />}
+
+      {selectedStatementCustomerId && (
+        <CustomerStatementModal customerId={selectedStatementCustomerId} onClose={() => setSelectedStatementCustomerId(null)} />
+      )}
     </div>
   );
 }

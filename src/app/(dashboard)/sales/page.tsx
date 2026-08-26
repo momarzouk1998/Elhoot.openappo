@@ -584,6 +584,20 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
         backgroundColor: "#ffffff",
         scrollX: 0,
         scrollY: 0,
+        onclone: (clonedDoc) => {
+          const elements = clonedDoc.querySelectorAll('*');
+          elements.forEach((el: any) => {
+            if (el.style) {
+              const computed = window.getComputedStyle(el);
+              if (computed.backgroundColor && computed.backgroundColor.includes('oklch')) {
+                el.style.backgroundColor = '#ffffff';
+              }
+              if (computed.color && computed.color.includes('oklch')) {
+                el.style.color = '#0f172a';
+              }
+            }
+          });
+        },
       });
 
       const customerPhone = invData.customer?.whatsapp || invData.customer?.phone;
@@ -739,16 +753,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
         }
       ` }} />
 
-      {/* Floating Close Button */}
-      <div className="relative">
-        <button
-          onClick={onClose}
-          className="absolute top-3 left-3 z-20 w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-950 text-white flex items-center justify-center transition-colors cursor-pointer no-print shadow-lg"
-          title="إغلاق"
-        >
-          ✕
-        </button>
-      </div>
+
 
       <div className="p-1 sm:p-3 md:p-4 space-y-3 max-h-[85vh] overflow-y-auto">
         {editing ? (
