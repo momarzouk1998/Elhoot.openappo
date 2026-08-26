@@ -577,29 +577,7 @@ function InvoiceDetailsModal({ invoice, invoiceId, isAdmin, initialEditing = fal
     if (!element) return;
     try {
       setSharingWhatsapp(true);
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(element, {
-        useCORS: true,
-        allowTaint: true,
-        scale: 2,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: 0,
-        onclone: (clonedDoc) => {
-          const elements = clonedDoc.querySelectorAll('*');
-          elements.forEach((el: any) => {
-            if (el.style) {
-              const computed = window.getComputedStyle(el);
-              if (computed.backgroundColor && computed.backgroundColor.includes('oklch')) {
-                el.style.backgroundColor = '#ffffff';
-              }
-              if (computed.color && computed.color.includes('oklch')) {
-                el.style.color = '#0f172a';
-              }
-            }
-          });
-        },
-      });
+      const canvas = await captureElementToCanvas(element, { scale: 2.5 });
 
       const customerPhone = invData.customer?.whatsapp || invData.customer?.phone;
       const cleanPhone = customerPhone ? String(customerPhone).replace(/\D/g, "") : "";

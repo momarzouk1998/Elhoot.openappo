@@ -1,24 +1,66 @@
 /**
  * Safe wrapper around html2canvas.
- * Converts modern color functions (oklch, color(), oklab) in stylesheets and computed styles
- * to safe standard rgb() values so html2canvas renders perfectly without errors.
+ * Inlines computed styles on the target element and its descendants,
+ * then removes all global stylesheets and style tags containing oklch
+ * from the clone so html2canvas NEVER parses any Tailwind v4 oklch rules.
  */
 
-function convertUnsupportedColorsToRgb(str: string, ctx: CanvasRenderingContext2D | null): string {
-  if (!str || typeof str !== "string") return str;
-  if (!str.includes("oklch") && !str.includes("color(") && !str.includes("oklab")) return str;
-  if (!ctx) return str.replace(/(oklch|oklab|color)\([^)]+\)/gi, "rgb(2, 132, 199)");
-
-  return str.replace(/(oklch|oklab|color)\([^)]+\)/gi, (match) => {
-    try {
-      ctx.fillStyle = "#000000";
-      ctx.fillStyle = match;
-      return ctx.fillStyle;
-    } catch {
-      return "rgb(2, 132, 199)";
-    }
-  });
-}
+const ESSENTIAL_PROPS = [
+  "box-sizing",
+  "display",
+  "flex-direction",
+  "justify-content",
+  "align-items",
+  "flex-wrap",
+  "gap",
+  "grid-template-columns",
+  "grid-gap",
+  "width",
+  "height",
+  "min-width",
+  "max-width",
+  "min-height",
+  "max-height",
+  "margin-top",
+  "margin-right",
+  "margin-bottom",
+  "margin-left",
+  "padding-top",
+  "padding-right",
+  "padding-bottom",
+  "padding-left",
+  "background-color",
+  "background-image",
+  "color",
+  "font-family",
+  "font-size",
+  "font-weight",
+  "line-height",
+  "text-align",
+  "direction",
+  "border-top-width",
+  "border-top-style",
+  "border-top-color",
+  "border-right-width",
+  "border-right-style",
+  "border-right-color",
+  "border-bottom-width",
+  "border-bottom-style",
+  "border-bottom-color",
+  "border-left-width",
+  "border-left-style",
+  "border-left-color",
+  "border-top-left-radius",
+  "border-top-right-radius",
+  "border-bottom-right-radius",
+  "border-bottom-left-radius",
+  "box-shadow",
+  "overflow",
+  "white-space",
+  "vertical-align",
+  "table-layout",
+  "border-collapse",
+] as const;
 
 export async function captureElementToCanvas(
   element: HTMLElement,
@@ -38,77 +80,41 @@ export async function captureElementToCanvas(
     scrollX: 0,
     scrollY: 0,
     onclone: (clonedDoc, clonedElement) => {
-      const tempCanvas = clonedDoc.createElement("canvas");
-      const ctx = tempCanvas.getContext("2d");
-
-      // 1. Sanitize all <style> tags
+      // 1. Walk original and cloned elements, copying all computed styles inline as standard values
       try {
-        const styleTags = clonedDoc.querySelectorAll("style");
-        styleTags.forEach((styleTag) => {
-          if (
-            styleTag.textContent &&
-            (styleTag.textContent.includes("oklch") ||
-              styleTag.textContent.includes("color(") ||
-              styleTag.textContent.includes("oklab"))
-          ) {
-            styleTag.textContent = convertUnsupportedColorsToRgb(styleTag.textContent, ctx);
+        const liveElements = [element, ...Array.from(element.querySelectorAll("*"))] as HTMLElement[];
+        const cloneElements = [clonedElement, ...Array.from(clonedElement.querySelectorAll("*"))] as HTMLElement[];
+        const len = Math.min(liveElements.length, cloneElements.length);
+
+        for (let i = 0; i < len; i++) {
+          const live = liveElements[i];
+          const clone = cloneElements[i];
+          const computed = window.getComputedStyle(live);
+
+          for (const prop of ESSENTIAL_PROPS) {
+            let val = computed.getPropertyValue(prop);
+            if (!val || val === "initial" || val === "inherit") continue;
+            // Clean any oklch or color() in computed style values
+            if (val.includes("oklch") || val.includes("color(") || val.includes("oklab")) {
+              val = val.replace(/(oklch|oklab|color)\([^)]+\)/gi, "rgb(15, 65, 133)");
+            }
+            clone.style.setProperty(prop, val, "important");
+          }
+        }
+      } catch (err) {
+        console.warn("Computed style inlining warning:", err);
+      }
+
+      // 2. Remove all external stylesheets and style tags so html2canvas NEVER parses Tailwind oklch rules
+      try {
+        clonedDoc.querySelectorAll('link[rel="stylesheet"]').forEach((link) => link.remove());
+        clonedDoc.querySelectorAll("style").forEach((style) => {
+          if (style.textContent && (style.textContent.includes("oklch") || style.textContent.includes("oklab"))) {
+            style.remove();
           }
         });
       } catch (err) {
-        console.warn("Style tag sanitization warning:", err);
-      }
-
-      // 2. Walk original and cloned elements to convert computed colors
-      try {
-        const origAll = [element, ...Array.from(element.querySelectorAll("*"))] as HTMLElement[];
-        const clonedAll = [clonedElement, ...Array.from(clonedElement.querySelectorAll("*"))] as HTMLElement[];
-
-        const COLOR_PROPS = [
-          "color",
-          "backgroundColor",
-          "borderColor",
-          "borderTopColor",
-          "borderBottomColor",
-          "borderLeftColor",
-          "borderRightColor",
-          "outlineColor",
-          "boxShadow",
-          "textShadow",
-        ];
-
-        for (let i = 0; i < origAll.length; i++) {
-          const orig = origAll[i];
-          const clone = clonedAll[i];
-          if (!orig || !clone) continue;
-
-          if (clone.style) {
-            for (let s = 0; s < clone.style.length; s++) {
-              const prop = clone.style[s];
-              const val = clone.style.getPropertyValue(prop);
-              if (val && (val.includes("oklch") || val.includes("color(") || val.includes("oklab"))) {
-                clone.style.setProperty(prop, convertUnsupportedColorsToRgb(val, ctx));
-              }
-            }
-          }
-
-          try {
-            const computed = window.getComputedStyle(orig);
-            for (const prop of COLOR_PROPS) {
-              const val = (computed as any)[prop];
-              if (
-                val &&
-                typeof val === "string" &&
-                (val.includes("oklch") || val.includes("color(") || val.includes("oklab"))
-              ) {
-                const rgbVal = convertUnsupportedColorsToRgb(val, ctx);
-                const cssProp = prop.replace(/([A-Z])/g, "-$1").toLowerCase();
-                clone.style.setProperty(cssProp, rgbVal, "important");
-              }
-            }
-          } catch {}
-        }
-      } catch (err) {
-        console.warn("Element style sanitization warning:", err);
+        console.warn("Stylesheet stripping warning:", err);
       }
     },
   });

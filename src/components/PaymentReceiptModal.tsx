@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
+import { captureElementToCanvas } from "@/lib/html2canvas-safe";
 
 interface PaymentReceiptModalProps {
   paymentId: string;
@@ -41,36 +42,14 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
   const payDate = payment.payment_date || payment.created_at;
   const customerName = payment.customer?.name || "العميل المحترم";
 
-  // ─── Native WhatsApp Share: Identical to Invoice Modal ──────────────────────
+  // ─── Native WhatsApp Share: Using Safe Canvas Capture ──────────────────────
   const handleShareWhatsapp = async () => {
     if (sharingWhatsapp) return;
     const element = document.getElementById("receipt-sheet-" + paymentId);
     if (!element) return;
     try {
       setSharingWhatsapp(true);
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(element, {
-        useCORS: true,
-        allowTaint: true,
-        scale: 2,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: 0,
-        onclone: (clonedDoc) => {
-          const elements = clonedDoc.querySelectorAll('*');
-          elements.forEach((el: any) => {
-            if (el.style) {
-              const computed = window.getComputedStyle(el);
-              if (computed.backgroundColor && computed.backgroundColor.includes('oklch')) {
-                el.style.backgroundColor = '#ffffff';
-              }
-              if (computed.color && computed.color.includes('oklch')) {
-                el.style.color = '#0f172a';
-              }
-            }
-          });
-        },
-      });
+      const canvas = await captureElementToCanvas(element, { scale: 2.5 });
 
       const customerPhone = payment.customer?.whatsapp || payment.customer?.phone;
       const cleanPhone = customerPhone ? String(customerPhone).replace(/\D/g, "") : "";
@@ -125,15 +104,7 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
     if (!element) return;
     try {
       setDownloadingImage(true);
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(element, {
-        useCORS: true,
-        allowTaint: true,
-        scale: 2,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: 0,
-      });
+      const canvas = await captureElementToCanvas(element, { scale: 2.5 });
       const link = document.createElement("a");
       link.download = `إيصال_تحصيل_${customerName}.png`;
       link.href = canvas.toDataURL("image/png");
