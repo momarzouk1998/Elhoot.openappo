@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
 
@@ -9,6 +10,8 @@ interface PaymentReceiptModalProps {
 
 export default function PaymentReceiptModal({ paymentId, onClose }: PaymentReceiptModalProps) {
   const { data: payment, loading } = useApi<any>(`/api/payments/customers/${paymentId}`);
+  const [sharingWhatsapp, setSharingWhatsapp] = useState(false);
+  const [downloadingImage, setDownloadingImage] = useState(false);
 
   if (loading) {
     return (
@@ -36,37 +39,114 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
   const paid    = Number(payment.amount || 0);
   const newBal  = Number(payment.new_balance || 0);
   const payDate = payment.payment_date || payment.created_at;
+  const customerName = payment.customer?.name || "العميل المحترم";
 
-  // ─── WhatsApp: instant text message, no screenshot ──────────────────────────
-  const handleShareWhatsapp = () => {
-    const customerPhone  = payment.customer?.whatsapp || payment.customer?.phone;
-    const cleanPhone     = customerPhone ? String(customerPhone).replace(/\D/g, "") : "";
-    const formattedPhone = cleanPhone.startsWith("0") ? `2${cleanPhone}` : cleanPhone;
-    const customerName   = payment.customer?.name || "العميل المحترم";
+  // ─── Native WhatsApp Share: Identical to Invoice Modal ──────────────────────
+  const handleShareWhatsapp = async () => {
+    if (sharingWhatsapp) return;
+    const element = document.getElementById("receipt-sheet-" + paymentId);
+    if (!element) return;
+    try {
+      setSharingWhatsapp(true);
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(element, {
+        useCORS: true,
+        allowTaint: true,
+        scale: 2,
+        backgroundColor: "#ffffff",
+        scrollX: 0,
+        scrollY: 0,
+        onclone: (clonedDoc) => {
+          const elements = clonedDoc.querySelectorAll('*');
+          elements.forEach((el: any) => {
+            if (el.style) {
+              const computed = window.getComputedStyle(el);
+              if (computed.backgroundColor && computed.backgroundColor.includes('oklch')) {
+                el.style.backgroundColor = '#ffffff';
+              }
+              if (computed.color && computed.color.includes('oklch')) {
+                el.style.color = '#0f172a';
+              }
+            }
+          });
+        },
+      });
 
-    const msg = [
-      `مرحباً بك أستاذ ${customerName} 👋`,
-      ``,
-      `📋 *إيصال تحصيل — شركة الحوت*`,
-      `📅 ${formatDate(payDate)}`,
-      ``,
-      `💰 السابق:  ${formatEGP(prevBal)} ج`,
-      `✅ المدفوع: ${formatEGP(paid)} ج`,
-      `📌 المتبقي: ${formatEGP(newBal)} ج`,
-      ``,
-      `طريقة الدفع: ${payment.payment_method || "—"}`,
-      ``,
-      `شكراً لتعاملكم مع شركة الحوت 🙏`,
-    ].join("\n");
+      const customerPhone = payment.customer?.whatsapp || payment.customer?.phone;
+      const cleanPhone = customerPhone ? String(customerPhone).replace(/\D/g, "") : "";
+      const formattedPhone = cleanPhone.startsWith("0") ? ("2" + cleanPhone) : cleanPhone;
+      const receiptText = "مرحباً بك أستاذ " + customerName + "،\nمرفق إيصال تحصيل نقدية من شركة الحوت.\nالمبلغ المسلم: " + formatEGP(paid) + " ج\nالمتبقي النهائي: " + formatEGP(newBal) + " ج\nشكراً لتعاملكم معنا.";
 
-    const waUrl = formattedPhone
-      ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`
-      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+      // 1. Web Share API with File (Native mobile Chrome/Safari share directly to WhatsApp)
+      if (typeof navigator !== "undefined" && typeof (navigator as any).canShare === "function") {
+        try {
+          const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+          if (blob) {
+            const file = new File([blob as BlobPart], "إيصال_تحصيل_" + customerName + ".png", { type: "image/png" });
+            if ((navigator as any).canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: "إيصال تحصيل شركة الحوت",
+                text: receiptText,
+              });
+              return;
+            }
+          }
+        } catch (shareErr: any) {
+          if (shareErr?.name === "AbortError") {
+            return;
+          }
+          console.warn("Native share failed, falling back to download & WhatsApp link", shareErr);
+        }
+      }
 
-    window.open(waUrl, "_blank");
+      // 2. Fallback: Automatically download image & open WhatsApp directly
+      const link = document.createElement("a");
+      link.download = "إيصال_تحصيل_" + customerName + ".png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+
+      const waUrl = formattedPhone
+        ? ("https://wa.me/" + formattedPhone + "?text=" + encodeURIComponent(receiptText))
+        : ("https://wa.me/?text=" + encodeURIComponent(receiptText));
+      window.open(waUrl, "_blank");
+    } catch (err) {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء تجهيز إيصال التحصيل");
+    } finally {
+      setSharingWhatsapp(false);
+    }
   };
 
-  // ─── Print page: opens styled server-rendered page — no html2canvas ─────────
+  // ─── Download image ─────────────────────────────────────────────────────────
+  const handleDownloadImage = async () => {
+    if (downloadingImage) return;
+    const element = document.getElementById("receipt-sheet-" + paymentId);
+    if (!element) return;
+    try {
+      setDownloadingImage(true);
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(element, {
+        useCORS: true,
+        allowTaint: true,
+        scale: 2,
+        backgroundColor: "#ffffff",
+        scrollX: 0,
+        scrollY: 0,
+      });
+      const link = document.createElement("a");
+      link.download = `إيصال_تحصيل_${customerName}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (err) {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء تحميل الصورة");
+    } finally {
+      setDownloadingImage(false);
+    }
+  };
+
+  // ─── Print page: opens styled server-rendered page ─────────────────────────
   const handlePrint = () => {
     window.open(`/print/payment/customer/${paymentId}`, "_blank");
   };
@@ -95,90 +175,106 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
                     <img src="/logo.png" alt="شركة الحوت" className="w-full h-full object-contain" />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-lg font-black text-slate-900 leading-tight whitespace-nowrap">شركة الحوت</h2>
-                    <p className="text-xs font-bold text-amber-600 whitespace-nowrap">للأدوات واللوحات الكهربائية</p>
+                    <h3 className="font-black text-slate-900 text-base leading-tight">شركة الحوت</h3>
+                    <p className="text-xs text-slate-500 font-bold">للأدوات واللوحات الكهربائية</p>
                   </div>
                 </div>
-
-                <div className="bg-emerald-700 text-white px-3 py-1.5 rounded-xl shrink-0">
-                  <span className="text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
-                    💳 إيصال تحصيل
-                    <span className="text-emerald-200 font-mono text-[11px]">{formatDate(payDate)}</span>
+                <div className="text-left shrink-0">
+                  <span className="inline-block bg-emerald-600 text-white text-xs font-black px-3 py-1 rounded-full shadow-sm">
+                    إيصال تحصيل نقدية
                   </span>
+                  <p className="text-[11px] text-slate-400 font-bold mt-1">{formatDate(payDate)}</p>
                 </div>
               </div>
             </div>
 
-            {/* Customer details */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5 text-sm">
-              <p className="text-base font-extrabold text-slate-900 text-right">
-                {payment.customer?.name}
+            {/* Customer info */}
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center justify-between text-xs">
+              <div>
+                <span className="text-slate-400 font-medium">العميل: </span>
+                <strong className="text-slate-900 text-sm font-black">{payment.customer?.name || "عميل عام"}</strong>
+              </div>
+              {payment.customer?.phone && (
+                <span className="text-slate-600 font-mono text-xs bg-white px-2 py-0.5 rounded border border-slate-200">
+                  📞 {payment.customer.phone}
+                </span>
+              )}
+            </div>
+
+            {/* Amount paid box */}
+            <div className="bg-emerald-50 border-2 border-emerald-500 rounded-xl p-3.5 text-center">
+              <p className="text-xs text-emerald-800 font-bold mb-1">المبلغ المحصل</p>
+              <p className="text-2xl font-black text-emerald-700 font-mono">
+                {formatEGP(paid)} <span className="text-sm font-bold">ج.م</span>
               </p>
-              <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-600 pt-1 border-t border-slate-100">
-                {payment.customer?.phone && (
-                  <span>📞 <span className="font-mono font-bold">{payment.customer.phone}</span></span>
-                )}
-                <span>💳 <span className="font-bold text-slate-800">{payment.payment_method}</span></span>
+              {payment.payment_method && (
+                <p className="text-[11px] text-emerald-600 mt-1 font-semibold">طريقة الدفع: {payment.payment_method}</p>
+              )}
+            </div>
+
+            {/* Balances summary */}
+            <div className="grid grid-cols-2 gap-2 text-center text-xs">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                <p className="text-slate-400 text-[11px] mb-0.5 font-semibold">الحساب السابق</p>
+                <p className="font-extrabold text-slate-700 font-mono text-sm">{formatEGP(prevBal)} ج</p>
+              </div>
+              <div className="bg-sky-50 border-2 border-sky-500 rounded-xl p-2.5">
+                <p className="text-sky-800 text-[11px] mb-0.5 font-black">المتبقي النهائي</p>
+                <p className="font-black text-sky-900 font-mono text-sm">{formatEGP(newBal)} ج</p>
               </div>
             </div>
 
-            {/* 3-Column Financial Summary */}
-            <div className="border-2 border-emerald-600 rounded-xl overflow-hidden">
-              <div className="bg-emerald-800 text-white text-center py-1.5 px-3 text-xs font-extrabold">
-                📊 ملخص الحساب
-              </div>
-              <div className="grid grid-cols-3 bg-white text-center divide-x divide-x-reverse divide-slate-200">
-                <div className="py-3 px-1 space-y-1">
-                  <span className="text-[11px] font-bold text-gray-500 block">السابق</span>
-                  <span className={`text-base font-black font-mono block ${prevBal > 0 ? "text-rose-700" : prevBal < 0 ? "text-emerald-700" : "text-slate-700"}`}>
-                    {formatEGP(prevBal)} ج
-                  </span>
-                </div>
-                <div className="py-3 px-1 space-y-1 bg-emerald-50">
-                  <span className="text-[11px] font-extrabold text-emerald-800 block">المدفوع</span>
-                  <span className="text-lg font-black font-mono text-emerald-600 block">
-                    -{formatEGP(paid)} ج
-                  </span>
-                </div>
-                <div className="py-3 px-1 space-y-1">
-                  <span className="text-[11px] font-bold text-gray-500 block">المتبقي</span>
-                  <span className={`text-base font-black font-mono block ${newBal > 0 ? "text-rose-700" : newBal < 0 ? "text-emerald-700" : "text-slate-700"}`}>
-                    {formatEGP(newBal)} ج
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Notes */}
-            {payment.notes && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-900">
-                <strong>ملاحظات: </strong>{payment.notes}
+            {/* Treasury info */}
+            {payment.treasury && (
+              <div className="text-xs text-slate-400 flex items-center justify-between px-1">
+                <span>الخزينة المودع بها:</span>
+                <strong className="text-slate-700 font-bold">{payment.treasury.name}</strong>
               </div>
             )}
 
-            <p className="text-center text-[11px] text-gray-400 pt-1 border-t border-slate-100">
-              شركة الحوت للأدوات واللوحات الكهربائية ▪ تجارة وتوزيع الجملة
-            </p>
+            {payment.notes && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-800 font-medium">
+                <strong>ملاحظة: </strong>{payment.notes}
+              </div>
+            )}
+
+            {/* Footer note */}
+            <div className="pt-2 border-t border-slate-100 text-center text-[11px] text-slate-400 font-semibold">
+              شكراً لتعاملكم معنا ▪ شركة الحوت للأدوات الكهربائية
+            </div>
           </div>
         </div>
 
         {/* ── Actions ─────────────────────────────────────────────────────── */}
         <div className="px-3 pb-3 flex items-center gap-2">
-          {/* WhatsApp — instant */}
+          {/* WhatsApp — native share sheet matching Invoice modal */}
           <button
             type="button"
             onClick={handleShareWhatsapp}
-            className="flex-1 bg-green-600 hover:bg-green-700 active:scale-95 text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            disabled={sharingWhatsapp}
+            className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-green-400 active:scale-95 text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
           >
-            📲 إرسال واتساب
+            <span>{sharingWhatsapp ? "⏳" : "📲"}</span>
+            <span>{sharingWhatsapp ? "جاري التجهيز..." : "إرسال واتساب"}</span>
           </button>
 
-          {/* Print page — no html2canvas */}
+          {/* Download image */}
+          <button
+            type="button"
+            onClick={handleDownloadImage}
+            disabled={downloadingImage}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 active:scale-95 text-white text-sm font-bold px-3 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            title="تحميل صورة"
+          >
+            {downloadingImage ? "⏳" : "🖼️"}
+          </button>
+
+          {/* Print */}
           <button
             type="button"
             onClick={handlePrint}
-            className="bg-slate-600 hover:bg-slate-700 active:scale-95 text-white text-sm font-bold px-4 py-2.5 rounded-xl flex items-center justify-center shadow-sm transition-all cursor-pointer"
-            title="طباعة / تحميل"
+            className="bg-slate-800 hover:bg-slate-900 active:scale-95 text-white text-sm font-bold px-3 py-2.5 rounded-xl flex items-center justify-center shadow-sm transition-all cursor-pointer"
+            title="طباعة"
           >
             🖨️
           </button>
@@ -186,7 +282,7 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
           <button
             type="button"
             onClick={onClose}
-            className="bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 text-sm font-bold px-4 py-2.5 rounded-xl transition-all active:scale-95 cursor-pointer"
+            className="bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 text-sm font-bold px-3 py-2.5 rounded-xl transition-all active:scale-95 cursor-pointer"
           >
             ✕
           </button>
