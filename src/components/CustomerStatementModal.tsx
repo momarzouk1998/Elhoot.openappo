@@ -50,9 +50,6 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
       setSharingWhatsapp(true);
       const canvas = await captureElementToCanvas(element, { scale: 2.5 });
 
-      const customerPhone = customer.whatsapp || customer.phone;
-      const cleanPhone    = customerPhone ? String(customerPhone).replace(/\D/g, "") : "";
-      const formattedPhone = cleanPhone.startsWith("0") ? `2${cleanPhone}` : cleanPhone;
       const receiptText = `مرحباً بك أستاذ ${customerName}،\nمرفق كشف حساب شركة الحوت للأدوات الكهربائية.\nالمتبقي النهائي: ${formatEGP(finalBalance)} ج\nشكراً لتعاملكم معنا.`;
 
       // 1. Native Mobile Web Share API
@@ -134,39 +131,39 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
         <div className="p-3 sm:p-5 overflow-y-auto flex-1">
           <div
             id={sheetId}
-            className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 text-right space-y-4"
-            style={{ direction: "rtl", fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif", color: "#0f172a", backgroundColor: "#ffffff" }}
+            className="rounded-xl p-4 sm:p-6 text-right space-y-4"
+            style={{ direction: "rtl", fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif", color: "#0f172a", backgroundColor: "#ffffff", border: "1px solid #e2e8f0" }}
           >
             {/* Header */}
-            <div className="pb-4 border-b-2 border-slate-100 flex items-center justify-between gap-3">
+            <div className="pb-4 flex items-center justify-between gap-3" style={{ borderBottom: "2px solid #f1f5f9" }}>
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-xl border-2 border-sky-600 p-1 bg-white flex items-center justify-center shrink-0 shadow-sm">
-                  <img src="/logo.png" alt="شركة الحوت" className="w-full h-full object-contain" />
+                <div className="rounded-xl p-1 bg-white flex items-center justify-center shrink-0 shadow-sm" style={{ width: "56px", height: "56px", minWidth: "56px", minHeight: "56px", border: "2px solid #0284c7" }}>
+                  <img src="/logo.png" alt="شركة الحوت" style={{ width: "48px", height: "48px", minWidth: "48px", minHeight: "48px", maxWidth: "48px", maxHeight: "48px", objectFit: "contain", display: "block" }} />
                 </div>
                 <div>
-                  <h3 className="font-black text-slate-900 text-lg leading-tight">شركة الحوت</h3>
-                  <p className="text-xs text-sky-700 font-bold">للأدوات واللوحات الكهربائية ▪ تجارة وتوزيع الجملة</p>
+                  <h3 className="font-black text-lg leading-tight" style={{ color: "#0f172a" }}>شركة الحوت</h3>
+                  <p className="text-xs font-bold" style={{ color: "#0369a1" }}>للأدوات واللوحات الكهربائية ▪ تجارة وتوزيع الجملة</p>
                 </div>
               </div>
               <div className="text-left shrink-0">
-                <span className="inline-block bg-sky-900 text-white text-xs font-extrabold px-3.5 py-1.5 rounded-full shadow-sm">
+                <span style={{ backgroundColor: "#0c4a6e", color: "#ffffff", fontSize: "12px", fontWeight: 800, padding: "6px 14px", borderRadius: "9999px", whiteSpace: "nowrap", display: "inline-block" }}>
                   كشف حساب عميل
                 </span>
-                <p className="text-xs text-slate-400 font-semibold mt-1.5">
+                <p className="text-xs font-semibold mt-1.5" style={{ color: "#94a3b8" }}>
                   التاريخ: {formatDate(new Date())}
                 </p>
               </div>
             </div>
 
             {/* Customer Info Card */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex items-center justify-between text-sm">
+            <div className="rounded-xl p-3.5 flex items-center justify-between text-sm" style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
               <div>
-                <span className="text-slate-500 font-semibold text-xs">اسم العميل: </span>
-                <strong className="text-slate-900 text-base font-black mr-1">{customer.name}</strong>
+                <span className="text-xs font-semibold" style={{ color: "#64748b" }}>اسم العميل: </span>
+                <strong className="text-base font-black mr-1" style={{ color: "#0f172a" }}>{customer.name}</strong>
               </div>
               <div className="flex items-center gap-3">
                 {customer.phone && (
-                  <span className="text-slate-600 font-mono text-xs bg-white px-2.5 py-1 rounded-md border border-slate-200">
+                  <span className="font-mono text-xs px-2.5 py-1 rounded-md" style={{ backgroundColor: "#ffffff", border: "1px solid #e2e8f0", color: "#475569" }}>
                     📞 {customer.phone}
                   </span>
                 )}
@@ -174,87 +171,85 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
             </div>
 
             {/* Financial Summary Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center text-xs">
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
-                <p className="text-slate-500 font-semibold text-[11px] mb-0.5">رصيد افتتاحي</p>
-                <p className="font-extrabold text-slate-800 font-mono text-sm">{formatEGP(customer.opening_balance || 0)} ج</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center text-xs" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "10px" }}>
+              <div className="rounded-xl p-2.5" style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                <p className="text-[11px] mb-0.5 font-semibold" style={{ color: "#64748b" }}>رصيد افتتاحي</p>
+                <p className="font-extrabold font-mono text-sm" style={{ color: "#1e293b" }}>{formatEGP(customer.opening_balance || 0)} ج</p>
               </div>
-              <div className="bg-red-50 border border-red-200 rounded-xl p-2.5">
-                <p className="text-red-700 font-bold text-[11px] mb-0.5">إجمالي المبيعات (مدين)</p>
-                <p className="font-extrabold text-red-700 font-mono text-sm">{formatEGP(totalDebit)} ج</p>
+              <div className="rounded-xl p-2.5" style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca" }}>
+                <p className="text-[11px] mb-0.5 font-bold" style={{ color: "#b91c1c" }}>إجمالي المبيعات (مدين)</p>
+                <p className="font-extrabold font-mono text-sm" style={{ color: "#dc2626" }}>{formatEGP(totalDebit)} ج</p>
               </div>
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5">
-                <p className="text-emerald-700 font-bold text-[11px] mb-0.5">إجمالي التحصيلات (دائن)</p>
-                <p className="font-extrabold text-emerald-700 font-mono text-sm">{formatEGP(totalCredit)} ج</p>
+              <div className="rounded-xl p-2.5" style={{ backgroundColor: "#ecfdf5", border: "1px solid #a7f3d0" }}>
+                <p className="text-[11px] mb-0.5 font-bold" style={{ color: "#047857" }}>إجمالي التحصيلات (دائن)</p>
+                <p className="font-extrabold font-mono text-sm" style={{ color: "#059669" }}>{formatEGP(totalCredit)} ج</p>
               </div>
-              <div className="bg-sky-50 border-2 border-sky-600 rounded-xl p-2.5">
-                <p className="text-sky-900 font-black text-[11px] mb-0.5">الرصيد المتبقي النهائي</p>
-                <p className={`font-black font-mono text-base ${Number(finalBalance) > 0 ? "text-red-700" : Number(finalBalance) < 0 ? "text-emerald-700" : "text-sky-900"}`}>
+              <div className="rounded-xl p-2.5" style={{ backgroundColor: "#f0f9ff", border: "2px solid #0284c7" }}>
+                <p className="text-[11px] mb-0.5 font-black" style={{ color: "#0369a1" }}>الرصيد المتبقي النهائي</p>
+                <p className="font-black font-mono text-base" style={{ color: "#0c4a6e" }}>
                   {formatEGP(finalBalance)} ج
                 </p>
               </div>
             </div>
 
             {/* Transactions Table */}
-            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs text-right border-collapse" style={{ tableLayout: "auto" }}>
-                  <thead>
-                    <tr className="bg-slate-900 text-white font-bold text-[11px]">
-                      <th className="p-2.5 text-center w-8">#</th>
-                      <th className="p-2.5">التاريخ</th>
-                      <th className="p-2.5">البيان / الحركة</th>
-                      <th className="p-2.5 text-center">المرجع</th>
-                      <th className="p-2.5 text-left text-red-300">مدين (+)</th>
-                      <th className="p-2.5 text-left text-emerald-300">دائن (-)</th>
-                      <th className="p-2.5 text-left text-sky-200 font-extrabold">الرصيد</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entries && entries.length > 0 ? (
-                      entries.map((e: any, idx: number) => (
-                        <tr
-                          key={idx}
-                          className={`border-t border-slate-100 ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/70"}`}
-                        >
-                          <td className="p-2.5 text-center text-slate-400 font-mono font-bold">{idx + 1}</td>
-                          <td className="p-2.5 font-mono text-slate-600 whitespace-nowrap">{formatDate(e.date)}</td>
-                          <td className="p-2.5 font-bold text-slate-800">
-                            <span>{e.label}</span>
-                            {e.items && e.items.length > 0 && (
-                              <span className="text-[10px] text-slate-500 font-normal mr-1.5 block sm:inline">
-                                ({e.items.length} أصناف)
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-2.5 text-center font-mono font-semibold text-sky-700 whitespace-nowrap">{e.ref}</td>
-                          <td className="p-2.5 text-left font-mono font-bold text-red-600">
-                            {e.debit > 0 ? `${formatEGP(e.debit)} ج` : "—"}
-                          </td>
-                          <td className="p-2.5 text-left font-mono font-bold text-emerald-600">
-                            {e.credit > 0 ? `${formatEGP(e.credit)} ج` : "—"}
-                          </td>
-                          <td className="p-2.5 text-left font-mono font-black text-slate-900 bg-slate-100/60">
-                            {formatEGP(e.balance)} ج
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={7} className="p-6 text-center text-slate-400 font-semibold">
-                          لا توجد حركات مسجلة لهذا العميل
+            <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e2e8f0", backgroundColor: "#ffffff" }}>
+              <table className="w-full text-xs text-right border-collapse" style={{ tableLayout: "auto", width: "100%" }}>
+                <thead>
+                  <tr style={{ backgroundColor: "#0f172a", color: "#ffffff", fontWeight: "bold", fontSize: "11px" }}>
+                    <th style={{ padding: "10px", textAlign: "center", width: "32px" }}>#</th>
+                    <th style={{ padding: "10px", whiteSpace: "nowrap" }}>التاريخ</th>
+                    <th style={{ padding: "10px" }}>البيان / الحركة</th>
+                    <th style={{ padding: "10px", textAlign: "center", whiteSpace: "nowrap" }}>المرجع</th>
+                    <th style={{ padding: "10px", textAlign: "left", color: "#fca5a5" }}>مدين (+)</th>
+                    <th style={{ padding: "10px", textAlign: "left", color: "#6ee7b7" }}>دائن (-)</th>
+                    <th style={{ padding: "10px", textAlign: "left", color: "#bae6fd", fontWeight: 900 }}>الرصيد</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries && entries.length > 0 ? (
+                    entries.map((e: any, idx: number) => (
+                      <tr
+                        key={idx}
+                        style={{ borderTop: "1px solid #f1f5f9", backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}
+                      >
+                        <td style={{ padding: "10px", textAlign: "center", color: "#94a3b8", fontWeight: "bold" }}>{idx + 1}</td>
+                        <td style={{ padding: "10px", color: "#475569", whiteSpace: "nowrap", fontFamily: "monospace" }}>{formatDate(e.date)}</td>
+                        <td style={{ padding: "10px", fontWeight: "bold", color: "#1e293b" }}>
+                          <span>{e.label}</span>
+                          {e.items && e.items.length > 0 && (
+                            <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "normal", marginRight: "6px" }}>
+                              ({e.items.length} أصناف)
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: "10px", textAlign: "center", color: "#0369a1", fontWeight: "bold", whiteSpace: "nowrap", fontFamily: "monospace" }}>{e.ref}</td>
+                        <td style={{ padding: "10px", textAlign: "left", color: "#dc2626", fontWeight: "bold", fontFamily: "monospace" }}>
+                          {e.debit > 0 ? `${formatEGP(e.debit)} ج` : "—"}
+                        </td>
+                        <td style={{ padding: "10px", textAlign: "left", color: "#059669", fontWeight: "bold", fontFamily: "monospace" }}>
+                          {e.credit > 0 ? `${formatEGP(e.credit)} ج` : "—"}
+                        </td>
+                        <td style={{ padding: "10px", textAlign: "left", color: "#0f172a", fontWeight: 900, fontFamily: "monospace", backgroundColor: "#f1f5f9" }}>
+                          {formatEGP(e.balance)} ج
                         </td>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} style={{ padding: "24px", textAlign: "center", color: "#94a3b8", fontWeight: "bold" }}>
+                        لا توجد حركات مسجلة لهذا العميل
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
 
             {/* Footer note */}
-            <div className="pt-3 border-t border-slate-100 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-1">
-              <span className="font-bold text-slate-700">شركة الحوت للأدوات واللوحات الكهربائية</span>
-              <span className="text-[11px] text-slate-400">شكراً لتعاملكم معنا ▪ للإدارة والاستفسارات يرجى التواصل عبر الواتساب أو الهاتف</span>
+            <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-1 text-xs" style={{ borderTop: "1px solid #f1f5f9", color: "#64748b" }}>
+              <span className="font-bold" style={{ color: "#334155" }}>شركة الحوت للأدوات واللوحات الكهربائية</span>
+              <span style={{ fontSize: "11px", color: "#94a3b8" }}>شكراً لتعاملكم معنا ▪ للإدارة والاستفسارات يرجى التواصل عبر الواتساب أو الهاتف</span>
             </div>
           </div>
         </div>

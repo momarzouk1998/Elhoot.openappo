@@ -1,8 +1,8 @@
 /**
  * Safe wrapper around html2canvas.
- * Features a dynamic getComputedStyle Proxy in onclone that intercepts all color queries
- * and resolves oklch/color()/oklab functions to standard rgb() format, completely shielding
- * html2canvas from unsupported modern CSS color syntax.
+ * Converts oklch/color()/oklab functions to standard rgb() format,
+ * completely shielding html2canvas from unsupported CSS color syntax
+ * while preserving 100% of stylesheet layout, typography, and geometry.
  */
 
 function convertCssColorToRgb(str: string, ctx: CanvasRenderingContext2D | null): string {
@@ -14,7 +14,7 @@ function convertCssColorToRgb(str: string, ctx: CanvasRenderingContext2D | null)
     try {
       ctx.fillStyle = "#ffffff";
       ctx.fillStyle = match;
-      return ctx.fillStyle; // Browser canvas natively resolves to rgb(r, g, b)
+      return ctx.fillStyle; // Browser canvas natively resolves to standard rgb(r, g, b)
     } catch {
       return "rgb(15, 65, 133)";
     }
@@ -76,7 +76,7 @@ export async function captureElementToCanvas(
       try {
         const styleTags = clonedDoc.querySelectorAll("style");
         styleTags.forEach((styleTag) => {
-          if (styleTag.textContent && (styleTag.textContent.includes("oklch") || styleTag.textContent.includes("oklab"))) {
+          if (styleTag.textContent && (styleTag.textContent.includes("oklch") || styleTag.textContent.includes("oklab") || styleTag.textContent.includes("color("))) {
             styleTag.textContent = convertCssColorToRgb(styleTag.textContent, ctx);
           }
         });
@@ -84,14 +84,7 @@ export async function captureElementToCanvas(
         console.warn("Style tag sanitization warning:", err);
       }
 
-      // 3. Remove external stylesheets to avoid html2canvas trying to parse raw remote CSS
-      try {
-        clonedDoc.querySelectorAll('link[rel="stylesheet"]').forEach((link) => link.remove());
-      } catch (err) {
-        console.warn("Link removal warning:", err);
-      }
-
-      // 4. Clean any inline style attributes
+      // 3. Walk all elements in the cloned document and fix any inline styles with oklch
       try {
         const allCloned = [clonedElement, ...Array.from(clonedElement.querySelectorAll("*"))] as HTMLElement[];
         allCloned.forEach((el) => {
