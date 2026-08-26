@@ -172,7 +172,7 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
             <div style={{ borderBottom: "2px solid #e2e8f0", paddingBottom: "12px" }}>
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3">
-                  <div style={{ width: "56px", height: "56px", backgroundColor: "#ffffff", borderRadius: "12px", padding: "3px", border: "2px solid #0284c7", flexShrink: 0, display: "flex", alignItems: "center", justifyCenter: "center" }}>
+                  <div style={{ width: "56px", height: "56px", backgroundColor: "#ffffff", borderRadius: "12px", padding: "3px", border: "2px solid #0284c7", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <img src="/logo.png" alt="شركة الحوت" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                   </div>
                   <div>
