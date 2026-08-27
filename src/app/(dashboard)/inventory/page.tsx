@@ -128,10 +128,9 @@ function StockTab({ profile }: { profile: any }) {
   if (search) params.set('search', search);
   params.set('page', page.toString());
 
-  const { data: summaryData, loading: summaryLoading, refetch: refetchSummary } = useApi<any>('/api/inventory/summary');
+  const { data: summaryData } = useApi<any>('/api/inventory/summary');
   const { data, loading, refetch } = useApi<{ items: InvItem[]; total: number; limit: number; page: number }>(`/api/inventory?${params.toString()}`);
   const stores = summaryData?.stores || [];
-  const overall = summaryData?.overall;
   const showCost = profile?.can_see_cost;
 
   const [localItems, setLocalItems] = useState<InvItem[]>([]);
@@ -153,10 +152,7 @@ function StockTab({ profile }: { profile: any }) {
     Array.from(new Set(localItems.map(i => i.product.category?.trim()).filter(Boolean)))
   ) as string[];
 
-  function refreshAll() {
-    refetch();
-    refetchSummary();
-  }
+
 
   // تمييز العربيات عن المخازن الرئيسية بالأيقونة واللون
   const getStoreStyle = (name: string, type?: string) => {
@@ -293,9 +289,6 @@ function StockTab({ profile }: { profile: any }) {
           throw new Error(adjustJson?.error?.message || adjustJson?.error || 'فشل تعديل رصيد المخزن');
         }
       }
-
-      // تحديث الإحصائيات في الخلفية بهدوء
-      refetchSummary();
     } catch (err: any) {
       alert('❌ خطأ: ' + err.message);
       refetch(); // استرجاع البيانات في حالة الخطأ
@@ -319,7 +312,6 @@ function StockTab({ profile }: { profile: any }) {
         refetch();
         return;
       }
-      refetchSummary();
     } catch (err: any) {
       alert('❌ خطأ: ' + err.message);
       refetch();
@@ -336,73 +328,8 @@ function StockTab({ profile }: { profile: any }) {
 
   return (
     <div className="space-y-6">
-      {/* Cards Section */}
-      {summaryLoading ? (
-        <div className="card text-center py-6 text-gray-500">⏳ جاري تحميل إحصائيات المخازن...</div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Overall Card */}
-          <div className="card bg-gradient-to-r from-nazlawy-600 to-nazlawy-800 text-white shadow-xl transform hover:scale-[1.02] transition-transform">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-bold opacity-90">إجمالي كل المخازن</h3>
-              <span className="text-2xl">📦</span>
-            </div>
-            <div className="space-y-1">
-              <div className="flex justify-between">
-                <span className="text-sm opacity-80">عدد الأصناف:</span>
-                <span className="font-mono font-bold">{overall?.total_items || 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm opacity-80">إجمالي القطع:</span>
-                <span className="font-mono font-bold text-yellow-300">{formatQty(overall?.total_qty || 0)}</span>
-              </div>
-              {showCost && (
-                <div className="flex justify-between pt-2 border-t border-white/20 mt-2">
-                  <span className="text-sm opacity-80">إجمالي التكلفة:</span>
-                  <span className="font-mono font-bold text-green-300">{formatEGP(overall?.total_value || 0)} ج</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Store Cards with Distinct Styles */}
-          {stores.map((s: any) => {
-            const storeStyle = getStoreStyle(s.name, s.type);
-            return (
-              <div key={s.id} className={`card ${storeStyle.cardClass} transition-all`}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className={`text-md font-extrabold flex items-center gap-1.5 ${storeStyle.titleColor}`}>
-                    <span className="text-xl">{storeStyle.icon}</span>
-                    <span>{s.name}</span>
-                  </h3>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${storeStyle.badgeClass}`}>
-                    {storeStyle.typeLabel}
-                  </span>
-                </div>
-                <div className="space-y-1 text-sm text-gray-600">
-                  <div className="flex justify-between">
-                    <span>عدد الأصناف:</span>
-                    <span className="font-mono font-bold text-gray-900">{s.total_items}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>إجمالي القطع:</span>
-                    <span className={`font-mono font-bold ${storeStyle.qtyColor}`}>{formatQty(s.total_qty)}</span>
-                  </div>
-                  {showCost && (
-                    <div className="flex justify-between pt-2 border-t mt-2">
-                      <span>إجمالي التكلفة:</span>
-                      <span className="font-mono font-bold text-green-700">{formatEGP(s.total_value)} ج</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {/* Details Section */}
-      <div className="flex items-center justify-between flex-wrap gap-3 mt-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-bold text-slate-700">تفاصيل المخزون</h2>
           {lowOnly && (

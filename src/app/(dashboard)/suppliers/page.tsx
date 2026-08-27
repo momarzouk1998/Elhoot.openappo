@@ -73,34 +73,26 @@ function SuppliersTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <p className="text-sm text-gray-500">{data?.total ?? '...'} مورد</p>
-        <div className="flex gap-2">
-          <a href="/print/statement/all-suppliers" target="_blank" className="btn-secondary text-sm flex items-center gap-1">
-            📋 كشف حساب كل الموردين
-          </a>
-          <button onClick={() => setShow(true)} className="btn-primary">+ إضافة مورد</button>
-        </div>
+      <div className="flex gap-2 w-full">
+        <button
+          onClick={() => setShow(true)}
+          className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs sm:text-sm px-2.5 sm:px-4 py-2.5 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
+        >
+          <span>➕</span>
+          <span>مورد جديد</span>
+        </button>
+        <a
+          href="/print/statement/all-suppliers"
+          target="_blank"
+          className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm px-2.5 sm:px-4 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer border border-slate-700 whitespace-nowrap"
+        >
+          <span>📑</span>
+          <span>كشف حساب مجمع</span>
+        </a>
       </div>
 
-      <div className="card">
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 ابحث بالاسم أو الهاتف..." className="input-field" autoFocus />
-      </div>
-
-      {/* كاردات إجماليات تتحرك مع البحث */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="card p-4">
-          <div className="text-xs text-gray-500">عدد الموردين</div>
-          <div className="text-2xl font-extrabold text-slate-650">{data?.items.length ?? '...'}</div>
-        </div>
-        <div className="card p-4">
-          <div className="text-xs text-gray-500">إجمالي المستحقات</div>
-          <div className="text-2xl font-extrabold text-red-700">{formatEGP((data?.items || []).reduce((s, c) => s + Number(c.balance), 0))} ج</div>
-        </div>
-        <div className="card p-4">
-          <div className="text-xs text-gray-500">موردين ليهم مستحقات (علينا)</div>
-          <div className="text-2xl font-extrabold text-orange-700">{(data?.items || []).filter(c => Number(c.balance) > 0).length}</div>
-        </div>
+      <div className="card flex flex-col gap-3 md:flex-row">
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 ابحث بالاسم أو الهاتف..." className="input-field md:flex-1" autoFocus />
       </div>
 
       {loading ? <div className="card text-center py-12 text-gray-500">⏳ جاري التحميل...</div> : (

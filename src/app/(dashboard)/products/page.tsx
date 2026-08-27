@@ -21,7 +21,6 @@ interface Product {
 }
 
 export default function ProductsPage() {
-  const [tab, setTab] = useState<'all' | 'low_stock'>('all');
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [category, setCategory] = useState("");
@@ -31,20 +30,13 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1);
   const searchParams = useSearchParams();
 
-  const apiUrl = tab === 'low_stock'
-    ? `/api/products?search=${encodeURIComponent(debouncedSearch)}&category=${encodeURIComponent(category)}&low_stock=1`
-    : `/api/products?search=${encodeURIComponent(debouncedSearch)}&category=${encodeURIComponent(category)}&limit=50&page=${page}`;
+  const apiUrl = `/api/products?search=${encodeURIComponent(debouncedSearch)}&category=${encodeURIComponent(category)}&limit=50&page=${page}`;
 
   const { data, loading, refetch } = useApi<{
     items: Product[];
     total: number;
     limit: number;
     page: number;
-    stats?: {
-      total_products: number;
-      low_stock_count: number;
-      total_stock_value: number;
-    };
   }>(apiUrl);
   const { mutate } = useApiMutation();
 
@@ -64,9 +56,6 @@ export default function ProductsPage() {
   }, [searchParams]);
 
   const showCost = profile?.can_see_cost;
-  const totalProducts = data?.stats?.total_products ?? data?.total ?? 0;
-  const lowStock = data?.stats?.low_stock_count ?? 0;
-  const stockValue = data?.stats?.total_stock_value ?? 0;
 
   async function deleteProduct(p: Product) {
     if (!confirm(`حذف الصنف "${p.name}"؟\nملاحظة: لو له فواتير تاريخية هيتم إخفاؤه فقط.`)) return;
@@ -85,41 +74,10 @@ export default function ProductsPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-slate-650">🏷️ الأصناف</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {tab === 'low_stock' ? `⚠️ النواقص وتحت الحد الأدنى (${data?.items.length || 0} صنف)` : `${totalProducts} صنف إجمالي`}
+            {data?.total ?? 0} صنف إجمالي
           </p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary">+ إضافة صنف</button>
-      </div>
-
-      {/* شريط التبويبات */}
-      <div className="flex gap-2 border-b border-gray-200">
-        <button
-          onClick={() => { setTab('all'); setPage(1); }}
-          className={`px-4 py-2.5 text-sm font-bold transition-all border-b-2 -mb-px flex items-center gap-2 ${
-            tab === 'all'
-              ? 'border-nazlawy-500 text-nazlawy-600 bg-nazlawy-50/50 rounded-t-lg'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-t-lg'
-          }`}
-        >
-          <span>🏷️ كل الأصناف</span>
-          <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full font-mono">
-            {totalProducts}
-          </span>
-        </button>
-
-        <button
-          onClick={() => { setTab('low_stock'); setPage(1); }}
-          className={`px-4 py-2.5 text-sm font-bold transition-all border-b-2 -mb-px flex items-center gap-2 ${
-            tab === 'low_stock'
-              ? 'border-red-500 text-red-600 bg-red-50/70 rounded-t-lg'
-              : 'border-transparent text-gray-500 hover:text-red-700 hover:bg-red-50/30 rounded-t-lg'
-          }`}
-        >
-          <span>⚠️ نواقص وتحت الحد الأدنى (عرض شامل)</span>
-          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-mono font-bold animate-pulse">
-            {lowStock}
-          </span>
-        </button>
       </div>
 
       <div className="card flex flex-col gap-3 md:flex-row">
@@ -143,50 +101,6 @@ export default function ProductsPage() {
         </select>
       </div>
 
-      {/* كاردات إجماليات شاملة لكافة الأصناف */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <div
-          onClick={() => { setTab('all'); setPage(1); }}
-          className={`card p-4 cursor-pointer transition-all hover:scale-[1.01] ${tab === 'all' ? 'ring-2 ring-nazlawy-400 bg-nazlawy-50/30' : ''}`}
-        >
-          <div className="text-xs text-gray-500">إجمالي عدد الأصناف</div>
-          <div className="text-2xl font-extrabold text-slate-650">{totalProducts}</div>
-        </div>
-
-        <div
-          onClick={() => { setTab('low_stock'); setPage(1); }}
-          className={`card p-4 cursor-pointer transition-all hover:scale-[1.01] ${tab === 'low_stock' ? 'ring-2 ring-red-400 bg-red-50/40' : ''}`}
-        >
-          <div className="text-xs text-gray-500 flex items-center justify-between">
-            <span>تحت الحد الأدنى (الكل)</span>
-            <span className="text-[10px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded font-bold">عرض التاب</span>
-          </div>
-          <div className="text-2xl font-extrabold text-red-700">{lowStock}</div>
-        </div>
-
-        {showCost && (
-          <div className="card p-4">
-            <div className="text-xs text-gray-500">إجمالي قيمة المخزون (تكلفة)</div>
-            <div className="text-2xl font-extrabold text-nazlawy-600">{formatEGP(stockValue)} ج</div>
-          </div>
-        )}
-      </div>
-
-      {tab === 'low_stock' && (
-        <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 flex items-center justify-between flex-wrap gap-2 text-amber-900 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">⚠️</span>
-            <div>
-              <span className="font-bold">قائمة النواقص والأصناف تحت الحد الأدنى:</span>
-              <p className="text-xs text-amber-800 mt-0.5">يتم عرض كافة الأصناف التي تحتاج إعادة طلب فوراً في قائمة واحدة كاملة بدون تقسيم صفحات.</p>
-            </div>
-          </div>
-          <span className="bg-amber-200 text-amber-900 font-bold px-3 py-1 rounded-lg text-xs font-mono">
-            {data?.items.length || 0} صنف ناقص
-          </span>
-        </div>
-      )}
-
       {loading ? (
         <div className="card text-center py-12 text-gray-500">⏳ جاري التحميل...</div>
       ) : (
@@ -199,7 +113,6 @@ export default function ProductsPage() {
                 <th className="p-3 text-right">الوحدة</th>
                 <th className="p-3 text-right">إجمالي المخزون</th>
                 <th className="p-3 text-right">الحد الأدنى</th>
-                {tab === 'low_stock' && <th className="p-3 text-right text-red-700">النقص المطلوب</th>}
                 <th className="p-3 text-right">التوزيع بالمخازن</th>
                 <th className="p-3 text-center">إجراءات</th>
               </tr>
@@ -207,7 +120,6 @@ export default function ProductsPage() {
             <tbody>
               {data?.items.map((p) => {
                 const isUnderLimit = Number(p.total_stock) <= Number(p.reorder_level);
-                const shortage = Math.max(0, Number(p.reorder_level) - Number(p.total_stock));
 
                 return (
                   <tr
@@ -238,11 +150,6 @@ export default function ProductsPage() {
                       {formatQty(p.total_stock)}
                     </td>
                     <td className="p-3 font-mono text-xs text-gray-500 font-bold">{p.reorder_level}</td>
-                    {tab === 'low_stock' && (
-                      <td className="p-3 font-mono text-xs font-extrabold text-red-600 bg-red-100/40">
-                        {shortage > 0 ? `-${formatQty(shortage)}` : '0 (على الحد)'}
-                      </td>
-                    )}
                     <td className="p-3 text-xs text-gray-600">
                       {p.inventory_items.length > 0
                         ? p.inventory_items.map(i => `${i.store.name}: ${formatQty(i.current_stock)}`).join(' • ')
@@ -271,8 +178,8 @@ export default function ProductsPage() {
               })}
               {data?.items.length === 0 && (
                 <tr>
-                  <td colSpan={tab === 'low_stock' ? 8 : 7} className="p-12 text-center text-gray-400">
-                    {tab === 'low_stock' ? '🎉 ممتاز! لا توجد أي أصناف تحت الحد الأدنى حالياً.' : 'لا توجد أصناف'}
+                  <td colSpan={7} className="p-12 text-center text-gray-400">
+                    لا توجد أصناف
                   </td>
                 </tr>
               )}
@@ -281,8 +188,7 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* الترقيم يظهر فقط في تاب كل الأصناف */}
-      {tab === 'all' && data && data.total > 0 && (
+      {data && data.total > 0 && (
         <Pagination
           total={data.total}
           page={data.page}

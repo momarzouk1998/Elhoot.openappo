@@ -154,19 +154,19 @@ export default function Sidebar({ profile }: { profile: CurrentProfile }) {
     <>
       {/* ====== Mobile top bar ====== */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-header-gradient text-white px-3 py-2.5 flex items-center justify-between shadow-lg safe-area-top">
-        <button
-          onClick={() => setOpen(!open)}
-          className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white shrink-0 order-1 transition-colors"
-          aria-label={open ? "إغلاق القائمة" : "فتح القائمة"}
-        >
-          {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-        <div className="flex items-center gap-2.5 min-w-0 order-2">
+        <div className="flex items-center gap-2.5 min-w-0 order-1">
           <div className="w-11 h-11 rounded-xl bg-white p-1 border-2 border-amber-500 shrink-0 shadow-sm flex items-center justify-center overflow-hidden">
             <img src="/logo.png?v=5" alt="شركة الحوت" className="w-full h-full object-contain" />
           </div>
           <div className="font-extrabold text-sm truncate">شركة الحوت للأدوات الكهربائية</div>
         </div>
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white shrink-0 order-2 transition-colors"
+          aria-label={open ? "إغلاق القائمة" : "فتح القائمة"}
+        >
+          {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
       </header>
 
       {/* ====== Mobile drawer (overlay) ====== */}
