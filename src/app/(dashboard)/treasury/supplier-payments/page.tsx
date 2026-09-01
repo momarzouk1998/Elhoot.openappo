@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useApi, useApiMutation } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
 
+import SupplierPaymentReceiptModal from "@/components/SupplierPaymentReceiptModal";
+
 interface Payment {
   id: string; payment_date: string; amount: number; payment_method: string; notes: string | null;
   supplier?: { id: string; name: string; phone: string | null } | null;
@@ -14,9 +16,11 @@ const METHODS = ["نقدي", "إنستاباي", "فودافون كاش", "تح�
 
 export default function SupplierPaymentsPage() {
   const [show, setShow] = useState(false);
+  const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
   const { data, loading, refetch } = useApi<ApiResponse>("/api/payments/suppliers?limit=200");
 
-  async function handleDelete(p: Payment) {
+  async function handleDelete(p: Payment, e: React.MouseEvent) {
+    e.stopPropagation();
     if (!confirm(`⚠️ هل أنت متأكد من حذف سند السداد بمبلغ ${formatEGP(p.amount)} ج للمورد "${p.supplier?.name || 'غير محدد'}"؟\n\nسيتم إرجاع المبلغ لحساب المورد وإعادة إيداعه في الخزينة.`)) return;
     try {
       const res = await fetch(`/api/payments/suppliers/${p.id}`, { method: 'DELETE' });
@@ -58,21 +62,35 @@ export default function SupplierPaymentsPage() {
             </thead>
             <tbody>
               {data?.items.map(p => (
-                <tr key={p.id} className="border-t hover:bg-gray-50">
+                <tr
+                  key={p.id}
+                  onClick={() => setSelectedReceiptId(p.id)}
+                  className="border-t hover:bg-purple-50/60 cursor-pointer transition-colors"
+                  title="اضغط لعرض إيصال السداد ومشاركتها عبر الواتساب"
+                >
                   <td className="p-3 text-xs">{formatDate(p.payment_date)}</td>
-                  <td className="p-3 font-semibold">{p.supplier?.name || '—'}</td>
+                  <td className="p-3 font-semibold text-slate-800">{p.supplier?.name || '—'}</td>
                   <td className="p-3 text-xs text-gray-600">{p.treasury?.name || '—'}</td>
                   <td className="p-3 text-xs">{p.payment_method}</td>
                   <td className="p-3 font-mono font-bold text-red-700">{formatEGP(p.amount)}</td>
                   <td className="p-3 text-xs text-gray-500">{p.notes || '—'}</td>
-                  <td className="p-3 text-center">
-                    <button
-                      onClick={() => handleDelete(p)}
-                      className="text-xs px-2 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-bold"
-                      title="حذف سند السداد وإرجاع المبلغ لحساب المورد"
-                    >
-                      🗑️ حذف
-                    </button>
+                  <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
+                    <div className="flex gap-1 justify-center">
+                      <button
+                        onClick={() => setSelectedReceiptId(p.id)}
+                        className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded hover:bg-purple-200 font-bold cursor-pointer"
+                        title="إيصال السداد"
+                      >
+                        💳 إيصال
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(p, e)}
+                        className="text-xs px-2 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-bold cursor-pointer"
+                        title="حذف سند السداد"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -83,6 +101,9 @@ export default function SupplierPaymentsPage() {
       )}
 
       {show && <Form onClose={() => setShow(false)} onSaved={() => { setShow(false); refetch(); }} />}
+      {selectedReceiptId && (
+        <SupplierPaymentReceiptModal paymentId={selectedReceiptId} onClose={() => setSelectedReceiptId(null)} />
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useApi, useApiMutation } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
 import Pagination from "@/components/Pagination";
+import SupplierPaymentReceiptModal from "@/components/SupplierPaymentReceiptModal";
 
 /* ============================================
    أنواع مشتركة
@@ -201,6 +202,7 @@ function SupplierForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =
 function PaymentsTab() {
   const [show, setShow] = useState(false);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+  const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
   const { data, loading, refetch } = useApi<{ items: Payment[]; total: number; total_amount: number }>("/api/payments/suppliers?limit=500");
@@ -213,7 +215,8 @@ function PaymentsTab() {
 
   const totalFilteredAmount = filteredItems.reduce((s, p) => s + Number(p.amount), 0);
 
-  async function handleDelete(p: Payment) {
+  async function handleDelete(p: Payment, e: React.MouseEvent) {
+    e.stopPropagation();
     if (!confirm(`⚠️ هل أنت متأكد من حذف سند السداد بمبلغ ${formatEGP(p.amount)} ج للمورد "${p.supplier?.name || 'غير محدد'}"؟\n\nسيتم إرجاع المبلغ لرصيد الخزينة وتحديث مستحقات المورد.`)) return;
     try {
       const res = await fetch(`/api/payments/suppliers/${p.id}`, { method: 'DELETE' });
@@ -269,28 +272,40 @@ function PaymentsTab() {
             </thead>
             <tbody>
               {filteredItems.map(p => (
-                <tr key={p.id} className="border-t hover:bg-gray-50">
+                <tr
+                  key={p.id}
+                  onClick={() => setSelectedReceiptId(p.id)}
+                  className="border-t hover:bg-purple-50/60 cursor-pointer transition-colors"
+                  title="اضغط لعرض إيصال السداد ومشاركته عبر الواتساب"
+                >
                   <td className="p-3 text-xs">{formatDate(p.payment_date)}</td>
                   <td className="p-3 font-semibold text-slate-800">{p.supplier?.name || '—'}</td>
                   <td className="p-3 text-xs text-gray-600">{p.treasury?.name || '—'}</td>
                   <td className="p-3 text-xs">{p.payment_method}</td>
                   <td className="p-3 font-mono font-bold text-red-700">{formatEGP(p.amount)}</td>
                   <td className="p-3 text-xs text-gray-500">{p.notes || '—'}</td>
-                  <td className="p-3 text-center">
+                  <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center justify-center gap-1.5">
                       <button
-                        onClick={() => setEditingPayment(p)}
+                        onClick={() => setSelectedReceiptId(p.id)}
+                        className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded hover:bg-purple-200 font-bold cursor-pointer"
+                        title="إيصال السداد"
+                      >
+                        💳 إيصال
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditingPayment(p); }}
                         className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 font-bold cursor-pointer"
                         title="تعديل"
                       >
-                        ✏️ تعديل
+                        ✏️
                       </button>
                       <button
-                        onClick={() => handleDelete(p)}
+                        onClick={(e) => handleDelete(p, e)}
                         className="text-xs px-2 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-bold cursor-pointer"
                         title="حذف سند السداد"
                       >
-                        🗑️ حذف
+                        🗑️
                       </button>
                     </div>
                   </td>
@@ -309,6 +324,9 @@ function PaymentsTab() {
           onClose={() => setEditingPayment(null)}
           onSaved={() => { setEditingPayment(null); refetch(); }}
         />
+      )}
+      {selectedReceiptId && (
+        <SupplierPaymentReceiptModal paymentId={selectedReceiptId} onClose={() => setSelectedReceiptId(null)} />
       )}
     </div>
   );
