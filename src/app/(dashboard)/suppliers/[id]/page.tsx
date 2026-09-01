@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { useApi, useApiMutation } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
+import SupplierPaymentReceiptModal from "@/components/SupplierPaymentReceiptModal";
 
 interface SupplierDetail {
   id: string;
@@ -151,18 +152,35 @@ export default function SupplierDetailPage() {
   );
 }
 
-// حذف المورد (آمن)
+// حذف المورد (مع تأكيد الحذف الشامل للفواتير والمدفوعات إن وجدت)
 async function deleteSupplier(supplier: SupplierDetail, router: ReturnType<typeof useRouter>) {
-  if (!confirm(`حذف المورد "${supplier.name}"؟`)) return;
+  if (!confirm(`هل تريد بالتأكيد حذف المورد "${supplier.name}"؟`)) return;
+
   const res = await fetch(`/api/suppliers/${supplier.id}`, { method: 'DELETE', cache: 'no-store' });
   const json = await res.json();
+
   if (!res.ok) {
+    if (json?.requires_confirmation) {
+      const confirmed = confirm(json.message);
+      if (confirmed) {
+        const forceRes = await fetch(`/api/suppliers/${supplier.id}?force=true`, { method: 'DELETE', cache: 'no-store' });
+        const forceJson = await forceRes.json();
+        if (!forceRes.ok) {
+          alert('❌ ' + (forceJson?.error?.message || 'تعذّر حذف المورد'));
+          return;
+        }
+        alert('✅ تم حذف المورد وجميع معاملاته وفواتيره بنجاح');
+        router.push('/suppliers');
+        return;
+      }
+      return;
+    }
     alert('❌ ' + (json?.error?.message || json?.error?.code || 'تعذّر الحذف'));
     return;
   }
-  alert('✅ تم حذف المورد');
+
+  alert('✅ تم حذف المورد بنجاح');
   router.push('/suppliers');
-  router.refresh();
 }
 
 /* ============================================
@@ -184,6 +202,7 @@ function StatementSection({
   const { data, loading, refetch } = useApi<{ items: Payment[]; total_amount: number }>(`/api/payments/suppliers?supplier_id=${supplierId}&limit=9999`);
   const payments = data?.items || [];
   const totalPaid = data?.total_amount || 0;
+  const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
 
   async function handleDeletePayment(p: Payment) {
     if (!confirm(`⚠️ هل أنت متأكد من حذف سند السداد بمبلغ ${formatEGP(p.amount)} ج؟\n\nسيتم إرجاع المبلغ لرصيد الخزينة وتحديث المستحقات.`)) return;
@@ -224,27 +243,34 @@ function StatementSection({
             </thead>
             <tbody>
               {payments.map(p => (
-                <tr key={p.id} className="border-t hover:bg-gray-50">
+                <tr key={p.id} className="border-t hover:bg-purple-50/60 cursor-pointer transition-colors" onClick={() => setSelectedReceiptId(p.id)} title="اضغط لعرض إيصال السداد">
                   <td className="p-3 text-xs">{formatDate(p.payment_date)}</td>
                   <td className="p-3 text-xs text-gray-600">{p.treasury?.name || '—'}</td>
                   <td className="p-3 text-xs">{p.payment_method}</td>
                   <td className="p-3">{p.notes || 'سداد لمورد'}</td>
                   <td className="p-3 font-mono font-bold text-red-700">{formatEGP(p.amount)}</td>
-                  <td className="p-3 text-center">
+                  <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        onClick={() => setSelectedReceiptId(p.id)}
+                        className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded hover:bg-purple-200 font-bold cursor-pointer"
+                        title="إيصال السداد"
+                      >
+                        💳 إيصال
+                      </button>
                       <button
                         onClick={() => onEditPayment(p)}
                         className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 font-bold cursor-pointer"
                         title="تعديل السداد"
                       >
-                        ✏️ تعديل
+                        ✏️
                       </button>
                       <button
                         onClick={() => handleDeletePayment(p)}
                         className="text-xs px-2 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-bold cursor-pointer"
                         title="حذف السداد"
                       >
-                        🗑️ حذف
+                        🗑️
                       </button>
                     </div>
                   </td>
@@ -263,6 +289,9 @@ function StatementSection({
             )}
           </table>
         </div>
+      )}
+      {selectedReceiptId && (
+        <SupplierPaymentReceiptModal paymentId={selectedReceiptId} onClose={() => setSelectedReceiptId(null)} />
       )}
     </div>
   );

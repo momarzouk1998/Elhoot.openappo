@@ -81,30 +81,82 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 }
 
-// DELETE /api/suppliers/[id] — حذف آمن (soft-delete) أو منع لو فيه حركات
-export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// DELETE /api/suppliers/[id] — حذف المورد (يدعم الحذف الشامل مع الفواتير والمدفوعات بعد التأكيد)
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) { // eslint-disable-line @typescript-eslint/no-unused-vars
   const profile = await getCurrentUser();
   if (!profile) return NextResponse.json({ ok: false, error: { code: 'UNAUTHORIZED' } }, { status: 401 });
-  if (profile.role === 'rep') {
-    return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'لا تملك صلاحية الحذف' } }, { status: 403 });
+  if (profile.role !== 'admin') {
+    return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'فقط المدير يمكنه حذف المورد' } }, { status: 403 });
   }
 
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const force = searchParams.get('force') === 'true';
 
-    const [purchaseCount, paymentsCount] = await Promise.all([
+    // فحص الحركات المرتبطة بالمورد
+    const [purchaseCount, paymentsCount, returnsCount] = await Promise.all([
       prisma.purchase_invoices.count({ where: { supplier_id: id } }),
       prisma.supplier_payments.count({ where: { supplier_id: id } }),
+      prisma.supplier_return_invoices.count({ where: { supplier_id: id } }),
     ]);
 
-    if (purchaseCount > 0 || paymentsCount > 0) {
+    const totalTransactions = purchaseCount + paymentsCount + returnsCount;
+
+    // إذا وُجدت حركات ولم يتم إرسال تأكيد force=true
+    if (totalTransactions > 0 && !force) {
       return NextResponse.json(
-        { ok: false, error: { code: 'HAS_TRANSACTIONS', message: `لا يمكن حذف المورد: له ${purchaseCount} فاتورة و ${paymentsCount} مدفوعة. احذف الحركات أولاً.` } },
-        { status: 400 }
+        {
+          ok: false,
+          requires_confirmation: true,
+          counts: { purchases: purchaseCount, payments: paymentsCount, returns: returnsCount },
+          message: `⚠️ تنبيه هام: هذا المورد مرتبط بـ:\n• ${purchaseCount} فاتورة مشتريات\n• ${paymentsCount} سند سداد\n• ${returnsCount} فاتورة مرتجع\n\nهل أنت متأكد من حذف المورد وكافة فواتيره ومدفوعاته وسجلاته بالكامل؟ لن يمكن التراجع عن هذه العملية.`,
+        },
+        { status: 409 }
       );
     }
 
-    await prisma.suppliers.delete({ where: { id } });
+    // تنفيذ الحذف الشامل داخل Transaction متكاملة
+    await prisma.$transaction(async (tx) => {
+      // 1. حذف بنود فواتير المشتريات ثم فواتير المشتريات
+      const supplierInvoices = await tx.purchase_invoices.findMany({
+        where: { supplier_id: id },
+        select: { id: true },
+      });
+      const invoiceIds = supplierInvoices.map((inv) => inv.id);
+      if (invoiceIds.length > 0) {
+        await tx.purchase_invoice_items.deleteMany({
+          where: { purchase_id: { in: invoiceIds } },
+        });
+        await tx.purchase_invoices.deleteMany({
+          where: { supplier_id: id },
+        });
+      }
+
+      // 2. حذف مدفوعات المورد
+      await tx.supplier_payments.deleteMany({
+        where: { supplier_id: id },
+      });
+
+      // 3. حذف بنود المرتجعات ثم فواتير المرتجعات
+      const supplierReturns = await tx.supplier_return_invoices.findMany({
+        where: { supplier_id: id },
+        select: { id: true },
+      });
+      const returnIds = supplierReturns.map((r) => r.id);
+      if (returnIds.length > 0) {
+        await tx.supplier_return_invoice_items.deleteMany({
+          where: { return_id: { in: returnIds } },
+        });
+        await tx.supplier_return_invoices.deleteMany({
+          where: { supplier_id: id },
+        });
+      }
+
+      // 4. حذف المورد نهائياً
+      await tx.suppliers.delete({ where: { id } });
+    });
+
     return NextResponse.json({ ok: true, data: { deleted: true } });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: { code: 'DB_ERROR', message: e?.message } }, { status: 500 });

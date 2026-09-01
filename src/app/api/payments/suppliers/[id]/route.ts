@@ -12,7 +12,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const payment = await prisma.supplier_payments.findUnique({
       where: { id },
       include: {
-        supplier: { select: { id: true, name: true, phone: true } },
+        supplier: { select: { id: true, name: true, phone: true, opening_balance: true } },
         treasury: { select: { id: true, name: true } },
         creator: { select: { id: true, full_name: true } },
         purchase: { select: { id: true, purchase_number: true, total_amount: true } },
@@ -20,7 +20,43 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     });
 
     if (!payment) return NextResponse.json({ ok: false, error: { code: "NOT_FOUND" } }, { status: 404 });
-    return NextResponse.json({ ok: true, data: payment });
+
+    // حساب الرصيد السابق والرصيد بعد السداد
+    let prevBalance = 0;
+    let newBalance = 0;
+    if (payment.supplier) {
+      const supplierId = payment.supplier.id;
+      const payCreatedAt = payment.created_at || payment.payment_date || new Date();
+      const opening = Number(payment.supplier.opening_balance || 0);
+
+      const [priorPurchases, priorPayments, priorReturns] = await Promise.all([
+        prisma.purchase_invoices.aggregate({
+          where: { supplier_id: supplierId, status: { not: 'ملغاة' }, created_at: { lt: payCreatedAt } },
+          _sum: { total_amount: true },
+        }),
+        prisma.supplier_payments.aggregate({
+          where: { supplier_id: supplierId, id: { not: payment.id }, created_at: { lt: payCreatedAt } },
+          _sum: { amount: true },
+        }),
+        prisma.supplier_return_invoices.aggregate({
+          where: { supplier_id: supplierId, status: { not: 'ملغاة' }, created_at: { lt: payCreatedAt } },
+          _sum: { total_amount: true },
+        }),
+      ]);
+
+      const priorPurchTotal = Number(priorPurchases._sum.total_amount || 0);
+      const priorPayTotal  = Number(priorPayments._sum.amount || 0);
+      const priorRetTotal  = Number(priorReturns._sum.total_amount || 0);
+
+      // رصيد المورد: الافتتاحي + المشتريات - المدفوعات - المرتجعات
+      prevBalance = opening + priorPurchTotal - priorPayTotal - priorRetTotal;
+      newBalance  = prevBalance - Number(payment.amount);
+    }
+
+    return NextResponse.json({
+      ok: true,
+      data: { ...payment, prev_balance: prevBalance, new_balance: newBalance },
+    });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: { code: "DB_ERROR", message: e?.message } }, { status: 500 });
   }
