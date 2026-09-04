@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
-import { captureElementToCanvas } from "@/lib/html2canvas-safe";
+import { captureElementToCanvas, downloadCanvasAsPng } from "@/lib/html2canvas-safe";
 
 interface SupplierPaymentReceiptModalProps {
   paymentId: string;
@@ -75,10 +75,7 @@ export default function SupplierPaymentReceiptModal({ paymentId, onClose }: Supp
         }
       }
 
-      const link = document.createElement("a");
-      link.download = `إيصال_سداد_${supplierName}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCanvasAsPng(canvas, `إيصال_سداد_${supplierName}.png`);
 
       const receiptText = `مرحباً أستاذ ${supplierName}، مرفق إيصال سداد شركة الحوت بقيمة ${formatEGP(paid)} ج (المتبقي: ${formatEGP(newBal)} ج)`;
       window.location.href = `whatsapp://send?text=${encodeURIComponent(receiptText)}`;
@@ -98,10 +95,7 @@ export default function SupplierPaymentReceiptModal({ paymentId, onClose }: Supp
     try {
       setDownloadingImage(true);
       const canvas = await captureElementToCanvas(element, { scale: 2.5 });
-      const link = document.createElement("a");
-      link.download = `إيصال_سداد_${supplierName}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCanvasAsPng(canvas, `إيصال_سداد_${supplierName}.png`);
     } catch (err) {
       console.error(err);
       alert("❌ حدث خطأ أثناء تحميل الصورة");

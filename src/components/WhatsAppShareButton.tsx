@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { captureElementToCanvas } from "@/lib/html2canvas-safe";
+import { captureElementToCanvas, downloadCanvasAsPng } from "@/lib/html2canvas-safe";
 
 export function WhatsAppShareButton({
   targetId = "statement",
@@ -68,10 +68,7 @@ export function WhatsAppShareButton({
       }
 
       // 2. Fallback: Download image and open WhatsApp app directly
-      const link = document.createElement("a");
-      link.download = `${fileName}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCanvasAsPng(canvas, `${fileName}.png`);
 
       window.location.href = `whatsapp://send?text=${encodeURIComponent(shareText)}`;
     } catch (err) {

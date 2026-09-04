@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
-import { captureElementToCanvas } from "@/lib/html2canvas-safe";
+import { captureElementToCanvas, downloadCanvasAsPng } from "@/lib/html2canvas-safe";
 
 interface PaymentReceiptModalProps {
   paymentId: string;
@@ -80,10 +80,7 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
       }
 
       // Desktop / Non-WebShare Fallback: Download image & Open WhatsApp Contact Chooser
-      const link = document.createElement("a");
-      link.download = `إيصال_تحصيل_${customerName}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCanvasAsPng(canvas, `إيصال_تحصيل_${customerName}.png`);
 
       // Open WhatsApp without locking to any phone number
       const receiptText = `مرحباً أستاذ ${customerName}، مرفق إيصال تحصيل شركة الحوت بقيمة ${formatEGP(paid)} ج (المتبقي: ${formatEGP(newBal)} ج)`;
@@ -104,10 +101,7 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
     try {
       setDownloadingImage(true);
       const canvas = await captureElementToCanvas(element, { scale: 2.5 });
-      const link = document.createElement("a");
-      link.download = `إيصال_تحصيل_${customerName}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCanvasAsPng(canvas, `إيصال_تحصيل_${customerName}.png`);
     } catch (err) {
       console.error(err);
       alert("❌ حدث خطأ أثناء تحميل الصورة");

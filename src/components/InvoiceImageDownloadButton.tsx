@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { captureElementToCanvas } from "@/lib/html2canvas-safe";
+import { captureElementToCanvas, downloadCanvasAsPng } from "@/lib/html2canvas-safe";
 
 export function InvoiceImageDownloadButton({
   targetId = "statement",
@@ -39,12 +39,7 @@ export function InvoiceImageDownloadButton({
       const canvas = await getCanvas();
       if (!canvas) return;
 
-      const link = document.createElement("a");
-      link.download = `${fileName}.png`;
-      link.href = canvas.toDataURL("image/png", 1.0);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      await downloadCanvasAsPng(canvas, `${fileName}.png`);
     } catch (error) {
       console.error("Image generation failed:", error);
       alert("❌ فشل حفظ الصورة، يرجى المحاولة مرة أخرى.");
@@ -80,10 +75,14 @@ export function InvoiceImageDownloadButton({
           }
         } catch (err) {
           console.warn("Direct clipboard image failed, falling back to download", err);
+          const url = URL.createObjectURL(blob);
           const link = document.createElement("a");
           link.download = `${fileName}.png`;
-          link.href = canvas.toDataURL("image/png", 1.0);
+          link.href = url;
+          document.body.appendChild(link);
           link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 10000);
         } finally {
           setLoading(false);
         }

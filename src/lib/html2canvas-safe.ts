@@ -23,6 +23,33 @@ function convertCssColorToRgb(str: string, ctx: CanvasRenderingContext2D | null)
   });
 }
 
+/**
+ * Downloads a canvas as a PNG via a blob: object URL instead of a data: URL.
+ * Some mobile browsers (e.g. Samsung Internet) intercept data: URL downloads
+ * and show a raw "do you want to download this file?" confirmation dialog
+ * with the base64 source visible — blob: URLs download silently instead.
+ */
+export async function downloadCanvasAsPng(canvas: HTMLCanvasElement, filename: string): Promise<void> {
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+  if (!blob) {
+    // Extremely unlikely fallback if toBlob is unsupported
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    return;
+  }
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.download = filename;
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
 export async function captureElementToCanvas(
   element: HTMLElement,
   options: {

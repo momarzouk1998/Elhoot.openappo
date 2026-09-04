@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
-import { captureElementToCanvas } from "@/lib/html2canvas-safe";
+import { captureElementToCanvas, downloadCanvasAsPng } from "@/lib/html2canvas-safe";
 
 interface CustomerStatementModalProps {
   customerId: string;
@@ -79,10 +79,7 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
       }
 
       // 2. Fallback: Auto download image and open WhatsApp app directly
-      const link = document.createElement("a");
-      link.download = `كشف_حساب_${customerName}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCanvasAsPng(canvas, `كشف_حساب_${customerName}.png`);
 
       window.location.href = `whatsapp://send?text=${encodeURIComponent(receiptText)}`;
     } catch (err) {
@@ -101,10 +98,7 @@ export default function CustomerStatementModal({ customerId, onClose }: Customer
     try {
       setDownloadingImage(true);
       const canvas = await captureElementToCanvas(element, { scale: 2.5, renderWidth: 800 });
-      const link = document.createElement("a");
-      link.download = `كشف_حساب_${customerName}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCanvasAsPng(canvas, `كشف_حساب_${customerName}.png`);
     } catch (err) {
       console.error(err);
       alert("❌ حدث خطأ أثناء تحميل الصورة");
