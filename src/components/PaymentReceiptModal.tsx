@@ -51,25 +51,32 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
       setSharingWhatsapp(true);
 
       const canvas = await captureElementToCanvas(element, { scale: 2 });
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
 
-      if (blob && typeof navigator !== "undefined" && typeof navigator.share === "function") {
-        const file = new File([blob], `receipt_${paymentId.slice(0, 8)}.png`, { type: "image/png" });
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        try {
+          const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+          if (blob) {
+            const file = new File([blob], `receipt_${paymentId.slice(0, 8)}.png`, { type: "image/png" });
 
-        // Native Mobile Share with Image File (Lets user pick ANY WhatsApp chat directly)
-        if (typeof (navigator as any).canShare === "function" && (navigator as any).canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: "إيصال تحصيل شركة الحوت",
-          });
-          return;
+            // Native Mobile Share with Image File (Lets user pick ANY WhatsApp chat directly)
+            if (typeof (navigator as any).canShare === "function" && (navigator as any).canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: "إيصال تحصيل شركة الحوت",
+              });
+              return;
+            }
+
+            // Fallback Native Share
+            await navigator.share({
+              files: [file],
+            });
+            return;
+          }
+        } catch (shareErr: any) {
+          if (shareErr?.name === "AbortError") return; // User closed share sheet
+          console.warn("Native share error, falling back to download:", shareErr);
         }
-
-        // Fallback Native Share
-        await navigator.share({
-          files: [file],
-        });
-        return;
       }
 
       // Desktop / Non-WebShare Fallback: Download image & Open WhatsApp Contact Chooser
@@ -81,10 +88,9 @@ export default function PaymentReceiptModal({ paymentId, onClose }: PaymentRecei
       // Open WhatsApp without locking to any phone number
       const receiptText = `مرحباً أستاذ ${customerName}، مرفق إيصال تحصيل شركة الحوت بقيمة ${formatEGP(paid)} ج (المتبقي: ${formatEGP(newBal)} ج)`;
       window.location.href = `whatsapp://send?text=${encodeURIComponent(receiptText)}`;
-    } catch (err: any) {
-      if (err?.name === "AbortError") return; // User closed share sheet
+    } catch (err) {
       console.error(err);
-      alert("❌ تعذر مشاركة الصورة مباشرة، تم تنزيلها على جهازك.");
+      alert("❌ حدث خطأ أثناء تجهيز إيصال التحصيل للمشاركة");
     } finally {
       setSharingWhatsapp(false);
     }

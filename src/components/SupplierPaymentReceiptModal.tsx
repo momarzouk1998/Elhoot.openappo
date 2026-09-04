@@ -51,21 +51,28 @@ export default function SupplierPaymentReceiptModal({ paymentId, onClose }: Supp
       setSharingWhatsapp(true);
 
       const canvas = await captureElementToCanvas(element, { scale: 2 });
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
 
-      if (blob && typeof navigator !== "undefined" && typeof navigator.share === "function") {
-        const file = new File([blob], `receipt_${paymentId.slice(0, 8)}.png`, { type: "image/png" });
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        try {
+          const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+          if (blob) {
+            const file = new File([blob], `receipt_${paymentId.slice(0, 8)}.png`, { type: "image/png" });
 
-        if (typeof (navigator as any).canShare === "function" && (navigator as any).canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: "إيصال سداد شركة الحوت",
-          });
-          return;
+            if (typeof (navigator as any).canShare === "function" && (navigator as any).canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: "إيصال سداد شركة الحوت",
+              });
+              return;
+            }
+
+            await navigator.share({ files: [file] });
+            return;
+          }
+        } catch (shareErr: any) {
+          if (shareErr?.name === "AbortError") return;
+          console.warn("Native share error, falling back to download:", shareErr);
         }
-
-        await navigator.share({ files: [file] });
-        return;
       }
 
       const link = document.createElement("a");
@@ -75,10 +82,9 @@ export default function SupplierPaymentReceiptModal({ paymentId, onClose }: Supp
 
       const receiptText = `مرحباً أستاذ ${supplierName}، مرفق إيصال سداد شركة الحوت بقيمة ${formatEGP(paid)} ج (المتبقي: ${formatEGP(newBal)} ج)`;
       window.location.href = `whatsapp://send?text=${encodeURIComponent(receiptText)}`;
-    } catch (err: any) {
-      if (err?.name === "AbortError") return;
+    } catch (err) {
       console.error(err);
-      alert("❌ تعذر مشاركة الصورة مباشرة، تم تنزيلها على جهازك.");
+      alert("❌ حدث خطأ أثناء تجهيز إيصال السداد للمشاركة");
     } finally {
       setSharingWhatsapp(false);
     }
