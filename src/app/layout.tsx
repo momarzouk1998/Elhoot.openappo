@@ -73,7 +73,7 @@ async function getInitialUser(): Promise<CurrentProfile | null> {
 async function checkSubscription(): Promise<{ active: boolean; status?: string; daysLeft?: number; graceDaysLeft?: number; message?: string }> {
   try {
     const adminUrl = process.env.ADMIN_API_URL || "https://admin.openappo.com";
-    const systemName = process.env.SYSTEM_NAME || "elhoot-system";
+    const systemName = process.env.SYSTEM_NAME || "elhoot";
 
     const res = await fetch(`${adminUrl}/api/subscription/verify?system=${systemName}`, {
       cache: "no-store", // Instant realtime checks on every refresh
