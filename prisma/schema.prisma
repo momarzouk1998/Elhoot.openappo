@@ -1,7 +1,7 @@
 // ========================================
-// Prisma Schema — ELHOOT (نظام النزلاوي)
+// Prisma Schema — ELHOOT (شركة الحوت للأدوات الكهربائية)
 // Migration from AppSheet → Next.js + PostgreSQL
-// Schema: elnazlawy (on shared DO Postgres, same as mazaya)
+// Schema: elhoot
 // ========================================
 
 generator client {

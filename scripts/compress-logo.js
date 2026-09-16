@@ -2,8 +2,8 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 
-const inputPath = path.join(__dirname, '../public/elnazlawy-logo.png');
-const outputPath = path.join(__dirname, '../public/elnazlawy-logo.webp');
+const inputPath = path.join(__dirname, '../public/elhoot-logo.png');
+const outputPath = path.join(__dirname, '../public/elhoot-logo.webp');
 
 async function compressLogo() {
   try {

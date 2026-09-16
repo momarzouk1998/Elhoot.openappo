@@ -4,15 +4,15 @@
 # ============================================================
 
 param(
-    [string]$BackupDir = "$env:USERPROFILE\Desktop\elnazlawy-backups",
-    [string]$ProjectRoot = "D:\OPEN APPS\DigitalOcian Projects\elnazlawy-system"
+    [string]$BackupDir = "$env:USERPROFILE\Desktop\elhoot-backups",
+    [string]$ProjectRoot = "D:\OPEN APPS\DigitalOcian Projects\elhoot-system"
 )
 
 # ===== معلومات الاتصال =====
 $SSH_HOST = "64.226.118.40"
 $SSH_USER = "root"
-$DB_USER = "elnazlawy"
-$DB_NAME = "elnazlawy_db"
+$DB_USER = "elhoot"
+$DB_NAME = "elhoot_db"
 $CONTAINER_NAME = "mazaya-postgres"
 
 # ===== المسارات =====
@@ -68,7 +68,7 @@ Log-OK "مجلد النسخ الاحتياطية: $BackupDir"
 # ========================================================
 Log-Warn "جاري عمل نسخة احتياطية من قاعدة البيانات..."
 
-$BACKUP_FILE = "$BackupDir\elnazlawy_backup_$TIMESTAMP.dump"
+$BACKUP_FILE = "$BackupDir\elhoot_backup_$TIMESTAMP.dump"
 
 # أمر عمل النسخة الاحتياطية على السيرفر
 $backupCmd = "docker exec $CONTAINER_NAME pg_dump -U $DB_USER -d $DB_NAME -F c -f /tmp/backup_$TIMESTAMP.dump"
@@ -190,8 +190,8 @@ UNION ALL SELECT 'Suppliers', COUNT(*)::text FROM elhoot.suppliers
 UNION ALL SELECT 'Products', COUNT(*)::text FROM elhoot.products
 UNION ALL SELECT 'Sales Invoices', COUNT(*)::text FROM elhoot.sales_invoices
 UNION ALL SELECT 'Purchase Invoices', COUNT(*)::text FROM elhoot.purchase_invoices
-UNION ALL SELECT 'Expenses', COUNT(*)::text FROM elnazlawy.expenses
-UNION ALL SELECT 'Treasuries', COUNT(*)::text FROM elnazlawy.treasuries
+UNION ALL SELECT 'Expenses', COUNT(*)::text FROM elhoot.expenses
+UNION ALL SELECT 'Treasuries', COUNT(*)::text FROM elhoot.treasuries
 UNION ALL SELECT 'Stores', COUNT(*)::text FROM elhoot.stores
 ORDER BY 1;
 "@

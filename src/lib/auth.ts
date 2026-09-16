@@ -1,5 +1,5 @@
 // ========================================
-// ELNAZLAWY — Auth types & module registry
+// ELHOOT — Auth types & module registry
 // ========================================
 
 export type UserRole = 'admin' | 'manager' | 'accountant' | 'rep';

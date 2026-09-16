@@ -41,7 +41,7 @@ export default function RoutePage() {
             <button
               key={day}
               onClick={() => setSelectedDay(selectedDay === day ? "" : day)}
-              className={`card p-3 text-center transition-all ${selectedDay === day ? "ring-2 ring-nazlawy-500 bg-nazlawy-50" : "hover:shadow-md"}`}
+              className={`card p-3 text-center transition-all ${selectedDay === day ? "ring-2 ring-elhoot-500 bg-elhoot-50" : "hover:shadow-md"}`}
             >
               <div className="text-sm font-bold text-slate-650">{day}</div>
               <div className="text-xs text-gray-500">{dayCustomers.length} عميل</div>
@@ -88,14 +88,14 @@ export default function RoutePage() {
                 <tr key={c.id} className="border-t hover:bg-gray-50">
                   <td className="p-3 font-semibold">{c.name}</td>
                   <td className="p-3 text-xs font-mono">
-                    {c.phone && <a href={`tel:${c.phone}`} className="text-nazlawy-600 hover:underline">{c.phone}</a>}
+                    {c.phone && <a href={`tel:${c.phone}`} className="text-elhoot-600 hover:underline">{c.phone}</a>}
                     {!c.phone && "—"}
                   </td>
                   <td className="p-3 text-xs text-gray-600">{c.address || '—'}</td>
                   <td className="p-3">
                     <div className="flex gap-1 flex-wrap">
                       {c.route_days.map(d => (
-                        <span key={d} className={`badge text-xs ${d === selectedDay ? "bg-nazlawy-100 text-nazlawy-800" : "bg-gray-100"}`}>{d}</span>
+                        <span key={d} className={`badge text-xs ${d === selectedDay ? "bg-elhoot-100 text-elhoot-800" : "bg-gray-100"}`}>{d}</span>
                       ))}
                     </div>
                   </td>
