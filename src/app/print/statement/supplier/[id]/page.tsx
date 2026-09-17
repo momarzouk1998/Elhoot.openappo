@@ -30,7 +30,7 @@ export default async function SupplierStatementPage({ params }: { params: Promis
       where: { supplier_id: id, status: { not: 'ملغاة' } },
       orderBy: { purchase_date: 'asc' },
       select: {
-        id: true, purchase_number: true, purchase_date: true, total_amount: true, status: true,
+        id: true, purchase_number: true, purchase_date: true, total_amount: true, status: true, notes: true,
         items: {
           select: { product_name: true, quantity: true, unit_cost: true, line_total: true },
         },
@@ -40,14 +40,18 @@ export default async function SupplierStatementPage({ params }: { params: Promis
     prisma.supplier_payments.findMany({
       where: { supplier_id: id },
       orderBy: { payment_date: 'asc' },
-      select: { id: true, payment_date: true, amount: true, payment_method: true, notes: true },
+      select: {
+        id: true, payment_date: true, amount: true, payment_method: true, notes: true,
+        treasury: { select: { name: true } },
+        creator: { select: { full_name: true } },
+      },
     }),
 
     prisma.supplier_return_invoices.findMany({
       where: { supplier_id: id, status: { not: 'ملغاة' } },
       orderBy: { return_date: 'asc' },
       select: {
-        id: true, return_number: true, return_date: true, total_amount: true,
+        id: true, return_number: true, return_date: true, total_amount: true, notes: true,
         items: {
           select: { product_name: true, quantity: true, unit_cost: true, line_total: true },
         },
@@ -57,6 +61,7 @@ export default async function SupplierStatementPage({ params }: { params: Promis
 
   if (!supplier || !supplier.is_active) notFound();
 
+  type EventItem = { product_name: string; quantity: number; unit_cost: number; line_total: number };
   type Entry = {
     date: Date;
     type: 'opening' | 'invoice' | 'payment' | 'return';
@@ -65,6 +70,9 @@ export default async function SupplierStatementPage({ params }: { params: Promis
     debit: number;
     credit: number;
     balance: number;
+    items?: EventItem[];
+    treasury?: string | null;
+    notes?: string | null;
   };
 
   let running = Number(supplier.opening_balance);
@@ -95,6 +103,13 @@ export default async function SupplierStatementPage({ params }: { params: Promis
         date: ev.date, type: 'invoice', label: 'فاتورة مشتريات',
         ref: `#${ev.data.purchase_number}`,
         debit: Number(ev.data.total_amount), credit: 0, balance: running,
+        notes: ev.data.notes,
+        items: (ev.data.items || []).map((it: any) => ({
+          product_name: it.product_name,
+          quantity: Number(it.quantity),
+          unit_cost: Number(it.unit_cost),
+          line_total: Number(it.line_total),
+        })),
       });
     } else if (ev.type === 'payment') {
       running -= Number(ev.data.amount);
@@ -103,6 +118,8 @@ export default async function SupplierStatementPage({ params }: { params: Promis
         label: ev.data.notes || 'سداد للمورد',
         ref: ev.data.payment_method,
         debit: 0, credit: Number(ev.data.amount), balance: running,
+        treasury: ev.data.treasury?.name,
+        notes: ev.data.notes,
       });
     } else {
       running -= Number(ev.data.total_amount);
@@ -110,6 +127,13 @@ export default async function SupplierStatementPage({ params }: { params: Promis
         date: ev.date, type: 'return', label: 'مرتجع للمورد',
         ref: `↩️ #${ev.data.return_number}`,
         debit: 0, credit: Number(ev.data.total_amount), balance: running,
+        notes: ev.data.notes,
+        items: (ev.data.items || []).map((it: any) => ({
+          product_name: it.product_name,
+          quantity: Number(it.quantity),
+          unit_cost: Number(it.unit_cost),
+          line_total: Number(it.line_total),
+        })),
       });
     }
   }
@@ -254,45 +278,105 @@ export default async function SupplierStatementPage({ params }: { params: Promis
           </div>
 
           {/* Transactions table */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+          <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ backgroundColor: C.gray, color: C.white }}>
-                <th style={{ padding: '10px', textAlign: 'right', border: `1px solid ${C.border}` }}>التاريخ</th>
-                <th style={{ padding: '10px', textAlign: 'right', border: `1px solid ${C.border}` }}>البيان</th>
-                <th style={{ padding: '10px', textAlign: 'right', border: `1px solid ${C.border}` }}>المرجع</th>
-                <th style={{ padding: '10px', textAlign: 'center', border: `1px solid ${C.border}` }}>مستحق (علينا)</th>
-                <th style={{ padding: '10px', textAlign: 'center', border: `1px solid ${C.border}` }}>مدفوع (له)</th>
-                <th style={{ padding: '10px', textAlign: 'center', border: `1px solid ${C.border}` }}>الرصيد</th>
+                <th style={{ width: '15%', padding: '8px 6px', textAlign: 'right', border: `1px solid ${C.border}` }}>التاريخ</th>
+                <th style={{ width: '31%', padding: '8px 6px', textAlign: 'right', border: `1px solid ${C.border}` }}>البيان</th>
+                <th style={{ width: '12%', padding: '8px 6px', textAlign: 'right', border: `1px solid ${C.border}` }}>المرجع</th>
+                <th style={{ width: '14%', padding: '8px 6px', textAlign: 'center', border: `1px solid ${C.border}` }}>مستحق (علينا)</th>
+                <th style={{ width: '14%', padding: '8px 6px', textAlign: 'center', border: `1px solid ${C.border}` }}>مدفوع (له)</th>
+                <th style={{ width: '14%', padding: '8px 6px', textAlign: 'center', border: `1px solid ${C.border}` }}>الرصيد</th>
               </tr>
             </thead>
             <tbody>
               {entries.map((e, i) => {
                 const bgColor = e.type === 'opening' ? '#f1f5f9' : i % 2 === 0 ? C.white : C.lightBg;
                 const balColor = e.balance > 0.01 ? C.danger : e.balance < -0.01 ? C.success : C.muted;
+                const hasItems = e.items && e.items.length > 0;
+
                 return (
-                  <tr key={i} style={{ backgroundColor: bgColor, fontWeight: e.type === 'opening' ? 700 : 400 }}>
-                    <td style={{ padding: '9px', border: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>
-                      {e.date.getFullYear() === 1970 ? '—' : formatDate(e.date)}
-                    </td>
-                    <td style={{ padding: '9px', border: `1px solid ${C.border}` }}>
-                      <span style={{
-                        backgroundColor: e.type === 'invoice' ? '#dbeafe' : e.type === 'return' ? '#ffedd5' : e.type === 'payment' ? '#dcfce7' : '#f1f5f9',
-                        color: e.type === 'invoice' ? '#1e40af' : e.type === 'return' ? '#c2410c' : e.type === 'payment' ? '#166534' : C.gray,
-                        padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 700,
-                      }}>
-                        {e.type === 'invoice' ? '📥 شراء' : e.type === 'return' ? '↩️ مرتجع' : e.type === 'payment' ? '💸 سداد' : '📂 افتتاحي'}
-                      </span>
-                      <span style={{ marginRight: '6px', fontWeight: 600 }}>{e.label}</span>
-                    </td>
-                    <td style={{ padding: '9px', border: `1px solid ${C.border}`, fontFamily: 'monospace', color: C.muted }}>{e.ref}</td>
-                    <td style={{ padding: '9px', textAlign: 'center', fontWeight: 700, color: e.debit > 0 ? C.danger : C.muted, border: `1px solid ${C.border}` }}>
-                      {e.debit > 0 ? n(e.debit) : '—'}
-                    </td>
-                    <td style={{ padding: '9px', textAlign: 'center', fontWeight: 700, color: e.credit > 0 ? C.success : C.muted, border: `1px solid ${C.border}` }}>
-                      {e.credit > 0 ? n(e.credit) : '—'}
-                    </td>
-                    <td style={{ padding: '9px', textAlign: 'center', fontWeight: 800, color: balColor, border: `1px solid ${C.border}`, fontFamily: 'monospace' }}>
-                      {n(e.balance)}
+                  <tr key={`entry-${i}`} style={{ borderBottom: `1px solid ${C.border}` }}>
+                    <td colSpan={6} style={{ padding: 0 }}>
+                      <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}>
+                        <tbody>
+                          <tr style={{ backgroundColor: bgColor, fontWeight: e.type === 'opening' ? 700 : 400 }}>
+                            <td style={{ width: '15%', padding: '8px 6px', border: `1px solid ${C.border}`, fontSize: '0.8rem' }}>
+                              {e.date.getFullYear() === 1970 ? '—' : formatDate(e.date)}
+                            </td>
+                            <td style={{ width: '31%', padding: '8px 6px', border: `1px solid ${C.border}` }}>
+                              <span style={{
+                                backgroundColor: e.type === 'invoice' ? '#dbeafe' : e.type === 'return' ? '#ffedd5' : e.type === 'payment' ? '#dcfce7' : '#f1f5f9',
+                                color: e.type === 'invoice' ? '#1e40af' : e.type === 'return' ? '#c2410c' : e.type === 'payment' ? '#166534' : C.gray,
+                                padding: '2px 6px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700,
+                              }}>
+                                {e.type === 'invoice' ? '📥 شراء' : e.type === 'return' ? '↩️ مرتجع' : e.type === 'payment' ? '💸 سداد' : '📂 افتتاحي'}
+                              </span>
+                              <span style={{ marginRight: '4px', fontWeight: 600, fontSize: '0.8rem' }}>{e.label}</span>
+                              {e.treasury && (
+                                <span style={{ display: 'block', fontSize: '0.72rem', color: C.muted, marginTop: '2px' }}>
+                                  🏦 الخزينة: {e.treasury}
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ width: '12%', padding: '8px 4px', border: `1px solid ${C.border}`, fontFamily: 'monospace', color: C.muted, fontSize: '0.78rem' }}>{e.ref}</td>
+                            <td style={{ width: '14%', padding: '8px 4px', textAlign: 'center', fontWeight: 700, color: e.debit > 0 ? C.danger : C.muted, border: `1px solid ${C.border}`, fontFamily: 'monospace', fontSize: '0.82rem' }}>
+                              {e.debit > 0 ? n(e.debit) : '—'}
+                            </td>
+                            <td style={{ width: '14%', padding: '8px 4px', textAlign: 'center', fontWeight: 700, color: e.credit > 0 ? C.success : C.muted, border: `1px solid ${C.border}`, fontFamily: 'monospace', fontSize: '0.82rem' }}>
+                              {e.credit > 0 ? n(e.credit) : '—'}
+                            </td>
+                            <td style={{ width: '14%', padding: '8px 4px', textAlign: 'center', fontWeight: 800, color: balColor, border: `1px solid ${C.border}`, fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                              {n(e.balance)}
+                            </td>
+                          </tr>
+
+                          {/* جدول تفاصيل الأصناف المدمج */}
+                          {hasItems && (
+                            <tr style={{ backgroundColor: '#fafafa' }}>
+                              <td colSpan={6} style={{ padding: '6px 8px 8px 8px', border: `1px solid ${C.border}` }}>
+                                <div style={{
+                                  backgroundColor: '#ffffff',
+                                  borderRadius: '8px',
+                                  border: `1.5px solid #cbd5e1`,
+                                  padding: '6px 8px',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                                }}>
+                                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: C.gray, marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <span>📦 تفاصيل الأصناف (عدد: {e.items!.length}):</span>
+                                  </div>
+                                  <table style={{ width: '100%', tableLayout: 'fixed', fontSize: '0.78rem', borderCollapse: 'collapse' }}>
+                                    <thead>
+                                      <tr style={{ backgroundColor: '#f1f5f9', color: C.gray, fontSize: '0.73rem', borderBottom: '1px solid #cbd5e1' }}>
+                                        <th style={{ width: '50%', padding: '3px 6px', textAlign: 'right' }}>اسم الصنف / البيان</th>
+                                        <th style={{ width: '15%', padding: '3px 6px', textAlign: 'center' }}>الكمية</th>
+                                        <th style={{ width: '17%', padding: '3px 6px', textAlign: 'left' }}>سعر الوحدة</th>
+                                        <th style={{ width: '18%', padding: '3px 6px', textAlign: 'left' }}>الإجمالي</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {e.items!.map((it, idx) => (
+                                        <tr key={idx} style={{ borderBottom: idx < e.items!.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                                          <td style={{ padding: '3px 6px', fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.product_name}</td>
+                                          <td style={{ padding: '3px 6px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 900, color: C.darkGray }}>
+                                            {it.quantity}
+                                          </td>
+                                          <td style={{ padding: '3px 6px', textAlign: 'left', fontFamily: 'monospace' }}>
+                                            {n(it.unit_cost)}
+                                          </td>
+                                          <td style={{ padding: '3px 6px', textAlign: 'left', fontFamily: 'monospace', fontWeight: 900, color: C.gray }}>
+                                            {n(it.line_total)}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
                     </td>
                   </tr>
                 );

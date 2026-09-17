@@ -186,6 +186,32 @@ async function deleteSupplier(supplier: SupplierDetail, router: ReturnType<typeo
 /* ============================================
    قسم كشف الحساب
 ============================================ */
+interface StatementEntry {
+  id: string;
+  date: string;
+  type: 'opening' | 'invoice' | 'payment' | 'return';
+  label: string;
+  ref: string;
+  debit: number;
+  credit: number;
+  balance: number;
+  notes?: string | null;
+  payment_method?: string;
+  treasury_name?: string | null;
+  creator_name?: string | null;
+  items?: { product_name: string; quantity: number; unit_cost: number; line_total: number }[];
+}
+
+interface StatementData {
+  entries: StatementEntry[];
+  totalDebit: number;
+  totalCredit: number;
+  totalPurchases: number;
+  totalReturns: number;
+  totalPayments: number;
+  finalBalance: number;
+}
+
 function StatementSection({
   supplierId,
   balance,
@@ -199,15 +225,21 @@ function StatementSection({
   onEditPayment: (p: Payment) => void;
   onChanged: () => void;
 }) {
-  const { data, loading, refetch } = useApi<{ items: Payment[]; total_amount: number }>(`/api/payments/suppliers?supplier_id=${supplierId}&limit=9999`);
-  const payments = data?.items || [];
-  const totalPaid = data?.total_amount || 0;
+  const { data, loading, refetch } = useApi<StatementData>(`/api/suppliers/${supplierId}/statement`);
+  const entries = data?.entries || [];
   const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
-  async function handleDeletePayment(p: Payment) {
-    if (!confirm(`⚠️ هل أنت متأكد من حذف سند السداد بمبلغ ${formatEGP(p.amount)} ج؟\n\nسيتم إرجاع المبلغ لرصيد الخزينة وتحديث المستحقات.`)) return;
+  const toggleExpand = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  async function handleDeletePayment(id: string, amount: number, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!confirm(`⚠️ هل أنت متأكد من حذف سند السداد بمبلغ ${formatEGP(amount)} ج؟\n\nسيتم إرجاع المبلغ لرصيد الخزينة وتحديث المستحقات.`)) return;
     try {
-      const res = await fetch(`/api/payments/suppliers/${p.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/payments/suppliers/${id}`, { method: 'DELETE' });
       const json = await res.json();
       if (!res.ok) {
         alert("❌ " + (json?.error?.message || json?.error?.code || "فشل في الحذف"));
@@ -224,65 +256,220 @@ function StatementSection({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">📋 كشف الحساب</h2>
-        <button onClick={onPay} className="btn-primary text-sm">+ سداد جديد</button>
+        <h2 className="text-lg font-bold">📋 كشف الحساب الشامل</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={() => window.open(`/print/statement/supplier/${supplierId}`, '_blank')}
+            className="text-xs sm:text-sm font-bold px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 flex items-center gap-1 cursor-pointer"
+          >
+            🖨️ طباعة كشف الحساب
+          </button>
+          <button onClick={onPay} className="btn-primary text-sm">+ سداد جديد</button>
+        </div>
       </div>
 
+      {/* Summary Cards */}
+      {data && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="card p-3 bg-blue-50/50 border border-blue-100 text-center">
+            <div className="text-xs text-gray-500 font-bold mb-1">إجمالي المشتريات</div>
+            <div className="text-sm sm:text-base font-extrabold font-mono text-blue-700">{formatEGP(data.totalPurchases)} ج</div>
+          </div>
+          <div className="card p-3 bg-orange-50/50 border border-orange-100 text-center">
+            <div className="text-xs text-gray-500 font-bold mb-1">إجمالي المرتجعات</div>
+            <div className="text-sm sm:text-base font-extrabold font-mono text-orange-700">{formatEGP(data.totalReturns)} ج</div>
+          </div>
+          <div className="card p-3 bg-emerald-50/50 border border-emerald-100 text-center">
+            <div className="text-xs text-gray-500 font-bold mb-1">إجمالي المسدد</div>
+            <div className="text-sm sm:text-base font-extrabold font-mono text-emerald-700">{formatEGP(data.totalPayments)} ج</div>
+          </div>
+          <div className="card p-3 bg-slate-50 border border-slate-200 text-center">
+            <div className="text-xs text-gray-500 font-bold mb-1">المتبقي النهائي</div>
+            <div className={`text-sm sm:text-base font-extrabold font-mono ${data.finalBalance > 0 ? 'text-red-700' : data.finalBalance < 0 ? 'text-blue-700' : 'text-emerald-700'}`}>
+              {formatEGP(data.finalBalance)} ج
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? <div className="card text-center py-8 text-gray-500">⏳ جاري التحميل...</div> : (
-        <div className="card overflow-x-auto p-0">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
+        <div className="card overflow-x-auto p-0 border border-slate-200">
+          <table className="w-full text-xs sm:text-sm">
+            <thead className="bg-slate-100 text-slate-700">
               <tr>
-                <th className="p-3 text-right">التاريخ</th>
-                <th className="p-3 text-right">الخزينة</th>
-                <th className="p-3 text-right">طريقة الدفع</th>
-                <th className="p-3 text-right">البيان</th>
-                <th className="p-3 text-right">المبلغ</th>
-                <th className="p-3 text-center">إجراء</th>
+                <th className="p-2.5 text-right">التاريخ</th>
+                <th className="p-2.5 text-right">البيان</th>
+                <th className="p-2.5 text-right">المرجع</th>
+                <th className="p-2.5 text-center">مستحق (علينا)</th>
+                <th className="p-2.5 text-center">مدفوع (له)</th>
+                <th className="p-2.5 text-center">الرصيد</th>
+                <th className="p-2.5 text-center">إجراءات</th>
               </tr>
             </thead>
             <tbody>
-              {payments.map(p => (
-                <tr key={p.id} className="border-t hover:bg-purple-50/60 cursor-pointer transition-colors" onClick={() => setSelectedReceiptId(p.id)} title="اضغط لعرض إيصال السداد">
-                  <td className="p-3 text-xs">{formatDate(p.payment_date)}</td>
-                  <td className="p-3 text-xs text-gray-600">{p.treasury?.name || '—'}</td>
-                  <td className="p-3 text-xs">{p.payment_method}</td>
-                  <td className="p-3">{p.notes || 'سداد لمورد'}</td>
-                  <td className="p-3 font-mono font-bold text-red-700">{formatEGP(p.amount)}</td>
-                  <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center justify-center gap-1.5">
-                      <button
-                        onClick={() => setSelectedReceiptId(p.id)}
-                        className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded hover:bg-purple-200 font-bold cursor-pointer"
-                        title="إيصال السداد"
-                      >
-                        💳 إيصال
-                      </button>
-                      <button
-                        onClick={() => onEditPayment(p)}
-                        className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 font-bold cursor-pointer"
-                        title="تعديل السداد"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleDeletePayment(p)}
-                        className="text-xs px-2 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-bold cursor-pointer"
-                        title="حذف السداد"
-                      >
-                        🗑️
-                      </button>
-                    </div>
+              {entries.map((entry, idx) => {
+                const hasItems = entry.items && entry.items.length > 0;
+                const isExpanded = !!expandedRows[entry.id || String(idx)];
+                const isPayment = entry.type === 'payment';
+
+                return (
+                  <tr
+                    key={entry.id || idx}
+                    className={`border-t transition-colors ${isPayment ? 'hover:bg-purple-50/60 cursor-pointer' : 'hover:bg-slate-50'}`}
+                    onClick={() => {
+                      if (isPayment && entry.id !== 'opening') setSelectedReceiptId(entry.id);
+                    }}
+                  >
+                    <td className="p-2.5 text-xs whitespace-nowrap text-slate-600">
+                      {entry.date === '1970-01-01' ? '—' : formatDate(entry.date)}
+                    </td>
+                    <td className="p-2.5">
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md ${
+                            entry.type === 'invoice' ? 'bg-blue-100 text-blue-800' :
+                            entry.type === 'return' ? 'bg-orange-100 text-orange-800' :
+                            entry.type === 'payment' ? 'bg-emerald-100 text-emerald-800' :
+                            'bg-slate-100 text-slate-800'
+                          }`}>
+                            {entry.type === 'invoice' ? '📥 فاتورة مشتريات' :
+                             entry.type === 'return' ? '↩️ مرتجع' :
+                             entry.type === 'payment' ? '💸 سداد' : '📂 رصيد افتتاحي'}
+                          </span>
+                          <span className="font-semibold text-slate-800">{entry.label}</span>
+                        </div>
+                        {entry.treasury_name && (
+                          <div className="text-[11px] text-gray-500">
+                            🏦 الخزينة: <span className="font-semibold text-slate-700">{entry.treasury_name}</span>
+                          </div>
+                        )}
+                        {entry.notes && entry.notes !== entry.label && (
+                          <div className="text-[11px] text-gray-500 italic">
+                            📝 {entry.notes}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-2.5 font-mono text-xs text-slate-600">
+                      {entry.ref}
+                    </td>
+                    <td className="p-2.5 text-center font-mono font-bold text-red-700">
+                      {entry.debit > 0 ? formatEGP(entry.debit) : '—'}
+                    </td>
+                    <td className="p-2.5 text-center font-mono font-bold text-emerald-700">
+                      {entry.credit > 0 ? formatEGP(entry.credit) : '—'}
+                    </td>
+                    <td className="p-2.5 text-center font-mono font-extrabold text-slate-800">
+                      {formatEGP(entry.balance)}
+                    </td>
+                    <td className="p-2.5 text-center" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-center gap-1">
+                        {hasItems && (
+                          <button
+                            onClick={(e) => toggleExpand(entry.id || String(idx), e)}
+                            className="text-xs px-2 py-1 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded font-bold cursor-pointer flex items-center gap-1"
+                            title="عرض تفاصيل الأصناف"
+                          >
+                            <span>📦</span>
+                            <span>{isExpanded ? 'إخفاء' : `الأصناف (${entry.items?.length})`}</span>
+                          </button>
+                        )}
+                        {isPayment && entry.id !== 'opening' && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedReceiptId(entry.id);
+                              }}
+                              className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded hover:bg-purple-200 font-bold cursor-pointer"
+                              title="إيصال السداد"
+                            >
+                              💳 إيصال
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEditPayment({
+                                  id: entry.id,
+                                  payment_date: entry.date,
+                                  amount: entry.credit,
+                                  payment_method: entry.payment_method || 'نقدي',
+                                  notes: entry.notes || null,
+                                });
+                              }}
+                              className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 font-bold cursor-pointer"
+                              title="تعديل السداد"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={(e) => handleDeletePayment(entry.id, entry.credit, e)}
+                              className="text-xs px-2 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded font-bold cursor-pointer"
+                              title="حذف السداد"
+                            >
+                              🗑️
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {/* Collapsed items sub-row when expanded */}
+              {entries.map((entry, idx) => {
+                const key = entry.id || String(idx);
+                if (!expandedRows[key] || !entry.items || entry.items.length === 0) return null;
+                return (
+                  <tr key={`items-${key}`} className="bg-slate-50/80 border-b border-slate-200">
+                    <td colSpan={7} className="p-3">
+                      <div className="bg-white rounded-lg border border-slate-200 p-2.5 shadow-sm max-w-2xl mx-auto">
+                        <div className="text-xs font-bold text-slate-700 mb-2 flex items-center justify-between border-b pb-1">
+                          <span>📦 أصناف {entry.label} ({entry.ref})</span>
+                          <span className="text-gray-500 font-normal">{entry.items.length} صنف</span>
+                        </div>
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-slate-100 text-slate-700">
+                              <th className="p-1.5 text-right">الصنف</th>
+                              <th className="p-1.5 text-center">الكمية</th>
+                              <th className="p-1.5 text-center">سعر الوحدة</th>
+                              <th className="p-1.5 text-left">الإجمالي</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {entry.items.map((it, i) => (
+                              <tr key={i} className="border-t border-slate-100">
+                                <td className="p-1.5 font-medium text-slate-800">{it.product_name}</td>
+                                <td className="p-1.5 text-center font-mono font-bold">{it.quantity}</td>
+                                <td className="p-1.5 text-center font-mono">{formatEGP(it.unit_cost)}</td>
+                                <td className="p-1.5 text-left font-mono font-bold text-slate-700">{formatEGP(it.line_total)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {entries.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-gray-400">
+                    لا توجد حركات مسجلة لهذا المورد
                   </td>
                 </tr>
-              ))}
-              {payments.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-gray-400">لا توجد حركات</td></tr>}
+              )}
             </tbody>
-            {payments.length > 0 && (
+            {entries.length > 0 && data && (
               <tfoot>
-                <tr className="bg-gray-100 font-bold">
-                  <td colSpan={4} className="p-3 text-left">الإجمالي:</td>
-                  <td className="p-3 font-mono text-red-700">{formatEGP(totalPaid)}</td>
+                <tr className="bg-slate-100 font-extrabold border-t-2 border-slate-300">
+                  <td colSpan={3} className="p-2.5 text-center">الإجماليات:</td>
+                  <td className="p-2.5 text-center font-mono text-red-700">{formatEGP(data.totalDebit)}</td>
+                  <td className="p-2.5 text-center font-mono text-emerald-700">{formatEGP(data.totalCredit)}</td>
+                  <td className="p-2.5 text-center font-mono text-slate-900">{formatEGP(data.finalBalance)}</td>
                   <td></td>
                 </tr>
               </tfoot>
