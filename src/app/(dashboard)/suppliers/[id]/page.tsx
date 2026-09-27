@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useApi, useApiMutation } from "@/hooks/useApi";
 import { formatEGP, formatDate } from "@/lib/format";
 import SupplierPaymentReceiptModal from "@/components/SupplierPaymentReceiptModal";
+import SupplierStatementModal from "@/components/SupplierStatementModal";
 
 interface SupplierDetail {
   id: string;
@@ -34,6 +35,7 @@ export default function SupplierDetailPage() {
   const [showPay, setShowPay] = useState(false);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [showEdit, setShowEdit] = useState(false);
+  const [showStatementModal, setShowStatementModal] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   const reloadSupplier = useCallback(() => setReloadKey(k => k + 1), []);
@@ -69,13 +71,20 @@ export default function SupplierDetailPage() {
         <h1 className="text-xl md:text-2xl font-extrabold text-slate-800 break-words">
           🏭 {supplier.name}
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setShowStatementModal(true)}
+            className="text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 shadow-sm cursor-pointer transition-all"
+          >
+            <span>📋</span>
+            <span>كشف حساب تفصيلي</span>
+          </button>
           <button
             onClick={() => window.open(`/print/statement/supplier/${supplier.id}`, '_blank')}
             className="text-xs sm:text-sm font-bold px-3 py-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-300 flex items-center gap-1 shadow-sm cursor-pointer"
           >
             <span>🖨️</span>
-            <span>كشف حساب</span>
+            <span>طباعة PDF</span>
           </button>
           <button
             onClick={() => setShowEdit(true)}
@@ -127,12 +136,17 @@ export default function SupplierDetailPage() {
         supplierId={supplier.id}
         balance={Number(supplier.balance)}
         onPay={() => setShowPay(true)}
+        onOpenStatementModal={() => setShowStatementModal(true)}
         onEditPayment={(p) => setEditingPayment(p)}
         onChanged={reloadSupplier}
       />
 
       {/* قسم فواتير المورد */}
       <InvoicesSection supplierId={supplier.id} />
+
+      {showStatementModal && (
+        <SupplierStatementModal supplierId={supplier.id} onClose={() => setShowStatementModal(false)} />
+      )}
 
       {showPay && (
         <PayForm supplierId={supplier.id} onClose={() => setShowPay(false)} onSaved={() => { setShowPay(false); reloadSupplier(); }} />
@@ -216,12 +230,14 @@ function StatementSection({
   supplierId,
   balance,
   onPay,
+  onOpenStatementModal,
   onEditPayment,
   onChanged,
 }: {
   supplierId: string;
   balance: number;
   onPay: () => void;
+  onOpenStatementModal?: () => void;
   onEditPayment: (p: Payment) => void;
   onChanged: () => void;
 }) {
@@ -255,9 +271,18 @@ function StatementSection({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-lg font-bold">📋 كشف الحساب الشامل</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {onOpenStatementModal && (
+            <button
+              onClick={onOpenStatementModal}
+              className="text-xs sm:text-sm font-bold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1 cursor-pointer transition-all shadow-sm"
+            >
+              <span>📋</span>
+              <span>كشف حساب تفصيلي</span>
+            </button>
+          )}
           <button
             onClick={() => window.open(`/print/statement/supplier/${supplierId}`, '_blank')}
             className="text-xs sm:text-sm font-bold px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 flex items-center gap-1 cursor-pointer"
@@ -488,7 +513,8 @@ function StatementSection({
    قسم فواتير المورد
 ============================================ */
 function InvoicesSection({ supplierId }: { supplierId: string }) {
-  const { data, loading } = useApi<{ items: PurchaseInvoice[] }>(`/api/purchases/invoices?supplier_id=${supplierId}`);
+  const { data, loading, refetch } = useApi<{ items: PurchaseInvoice[] }>(`/api/purchases/invoices?supplier_id=${supplierId}`);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const invoices = data?.items || [];
 
   return (
@@ -504,22 +530,44 @@ function InvoicesSection({ supplierId }: { supplierId: string }) {
                 <th className="p-3 text-right">الأصناف</th>
                 <th className="p-3 text-right">الإجمالي</th>
                 <th className="p-3 text-right">الحالة</th>
+                <th className="p-3 text-center">إجراءات</th>
               </tr>
             </thead>
             <tbody>
               {invoices.map(inv => (
-                <tr key={inv.id} className="border-t hover:bg-gray-50">
-                  <td className="p-3 font-mono font-bold">#{inv.purchase_number}</td>
+                <tr
+                  key={inv.id}
+                  className="border-t hover:bg-slate-50 cursor-pointer transition-colors"
+                  onClick={() => setSelectedInvoiceId(inv.id)}
+                >
+                  <td className="p-3 font-mono font-bold text-purple-700">#{inv.purchase_number}</td>
                   <td className="p-3 text-xs">{formatDate(inv.purchase_date)}</td>
-                  <td className="p-3 text-center">{inv._count?.items ?? 0}</td>
-                  <td className="p-3 font-mono font-bold">{formatEGP(inv.total_amount)}</td>
+                  <td className="p-3 text-center font-mono font-bold">{inv._count?.items ?? 0}</td>
+                  <td className="p-3 font-mono font-bold">{formatEGP(inv.total_amount)} ج</td>
                   <td className="p-3"><span className="badge bg-green-100 text-green-800">{inv.status}</span></td>
+                  <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => setSelectedInvoiceId(inv.id)}
+                      className="text-xs px-2.5 py-1 bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-lg font-bold cursor-pointer transition-all flex items-center gap-1 mx-auto"
+                    >
+                      <span>📦</span>
+                      <span>عرض الأصناف</span>
+                    </button>
+                  </td>
                 </tr>
               ))}
-              {invoices.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-gray-400">لا توجد فواتير</td></tr>}
+              {invoices.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-gray-400">لا توجد فواتير</td></tr>}
             </tbody>
           </table>
         </div>
+      )}
+
+      {selectedInvoiceId && (
+        <PurchaseDetailsModal
+          invoiceId={selectedInvoiceId}
+          onClose={() => setSelectedInvoiceId(null)}
+          onChanged={() => { refetch(); }}
+        />
       )}
     </div>
   );
@@ -646,6 +694,126 @@ function EditForm({ supplier, onClose, onSaved }: { supplier: SupplierDetail; on
         <div><label className="text-sm font-medium block mb-1">ملاحظات</label><textarea className="input-field" rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></div>
         <div className="flex gap-2 pt-3"><button onClick={save} disabled={loading} className="btn-primary flex-1">{loading ? 'جاري الحفظ...' : 'حفظ التعديلات'}</button><button onClick={onClose} className="btn-secondary">إلغاء</button></div>
       </div>
+    </div>
+  );
+}
+
+/* ============================================
+   تفاصيل فاتورة الشراء للمورد (PurchaseDetailsModal)
+============================================ */
+function PurchaseDetailsModal({
+  invoiceId,
+  onClose,
+  onChanged,
+}: {
+  invoiceId: string;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const { data: inv, loading } = useApi<any>(`/api/purchases/invoices/${invoiceId}`);
+
+  if (loading) {
+    return (
+      <ModalShell onClose={onClose}>
+        <div className="p-8 text-center space-y-3">
+          <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-sm font-bold text-gray-600">جاري تحميل الفاتورة...</p>
+        </div>
+      </ModalShell>
+    );
+  }
+
+  if (!inv) {
+    return (
+      <ModalShell onClose={onClose}>
+        <div className="p-8 text-center space-y-3">
+          <p className="text-sm font-bold text-red-600">❌ لم يتم العثور على الفاتورة</p>
+          <button onClick={onClose} className="btn-secondary text-xs">إغلاق</button>
+        </div>
+      </ModalShell>
+    );
+  }
+
+  return (
+    <ModalShell onClose={onClose} wide>
+      <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between z-10">
+        <div>
+          <h2 className="text-lg font-bold text-slate-800">
+            📥 فاتورة مشتريات #{inv.purchase_number}
+            <span className={`badge ${inv.status === 'مكتملة' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'} mr-2`}>
+              {inv.status}
+            </span>
+          </h2>
+          <p className="text-xs text-gray-500">{formatDate(inv.purchase_date)}</p>
+        </div>
+        <button onClick={onClose} className="text-2xl text-gray-400 hover:text-red-500 cursor-pointer">✕</button>
+      </div>
+
+      <div className="p-4 space-y-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <Info label="المورد" value={inv.supplier?.name || "—"} />
+          <Info label="المنشئ" value={inv.creator?.full_name || "—"} />
+          <Info label="تاريخ الفاتورة" value={formatDate(inv.purchase_date)} />
+        </div>
+
+        {/* جدول الأصناف */}
+        <div className="rounded-xl border border-slate-200 overflow-hidden">
+          <table className="w-full text-xs sm:text-sm">
+            <thead className="bg-purple-50 text-purple-900 font-bold">
+              <tr>
+                <th className="p-2.5 text-right">الصنف</th>
+                <th className="p-2.5 text-center">الكمية</th>
+                <th className="p-2.5 text-left">سعر الشراء</th>
+                <th className="p-2.5 text-left">الإجمالي</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(inv.items || []).map((it: any, idx: number) => (
+                <tr key={it.id || idx} className="border-t border-slate-100 hover:bg-slate-50">
+                  <td className="p-2.5 font-bold text-slate-800">{it.product_name}</td>
+                  <td className="p-2.5 text-center font-mono font-bold text-slate-900">{Number(it.quantity)}</td>
+                  <td className="p-2.5 text-left font-mono text-slate-600">{formatEGP(Number(it.unit_cost))} ج</td>
+                  <td className="p-2.5 text-left font-mono font-extrabold text-purple-700">{formatEGP(Number(it.line_total))} ج</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex justify-between items-center text-lg font-extrabold border-t pt-3 text-purple-800 bg-purple-50/50 p-3 rounded-xl border border-purple-100">
+          <span>إجمالي الفاتورة:</span>
+          <span className="font-mono">{formatEGP(Number(inv.total_amount))} ج</span>
+        </div>
+
+        {inv.notes && (
+          <div className="text-xs text-gray-600 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            📝 ملاحظات: {inv.notes}
+          </div>
+        )}
+
+        <div className="flex justify-end pt-3 border-t">
+          <button onClick={onClose} className="btn-secondary text-sm">إغلاق</button>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
+function ModalShell({ onClose, wide, children }: { onClose: () => void; wide?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 md:p-4" onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} className={`bg-white rounded-2xl shadow-2xl w-full ${wide ? "max-w-3xl" : "max-w-md"} max-h-[90vh] overflow-y-auto`}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Info({ label, value }: { label: string; value: any }) {
+  return (
+    <div>
+      <div className="text-xs text-gray-500 font-semibold">{label}</div>
+      <div className="font-bold text-slate-800">{value || "—"}</div>
     </div>
   );
 }
