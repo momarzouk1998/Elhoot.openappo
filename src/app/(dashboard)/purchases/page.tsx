@@ -335,18 +335,27 @@ function PurchaseDetailsModal({ invoiceId, isAdmin, onClose, onChanged }: {
   const { mutate } = useApiMutation();
   const [editing, setEditing] = useState(false);
   const [status, setStatus] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState("");
   const [notes, setNotes]   = useState("");
 
   const isCompleted = inv?.status === "مكتملة";
   const isCancelled = inv?.status === "ملغاة";
 
-  if (inv && status === "") { setStatus(inv.status); setNotes(inv.notes || ""); }
+  if (inv && status === "") {
+    setStatus(inv.status);
+    setPurchaseDate(inv.purchase_date ? new Date(inv.purchase_date).toISOString().split('T')[0] : "");
+    setNotes(inv.notes || "");
+  }
 
   if (loading) return <ModalShell onClose={onClose}><p className="p-8">⏳ جاري التحميل...</p></ModalShell>;
   if (!inv)    return <ModalShell onClose={onClose}><p className="p-8">❌ لم يتم العثور على الفاتورة</p></ModalShell>;
 
   async function saveChanges() {
-    const { error } = await mutate("PATCH", `/api/purchases/invoices/${invoiceId}`, { status, notes });
+    const { error } = await mutate("PATCH", `/api/purchases/invoices/${invoiceId}`, {
+      status,
+      purchase_date: purchaseDate || undefined,
+      notes,
+    });
     if (error) { alert("❌ " + error); return; }
     alert("✅ تم حفظ التعديلات"); setEditing(false); refetch();
   }
@@ -405,6 +414,15 @@ function PurchaseDetailsModal({ invoiceId, isAdmin, onClose, onChanged }: {
 
         {editing && !isCompleted && !isCancelled && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-gray-700 block mb-1">📅 تاريخ الفاتورة</label>
+              <input
+                type="date"
+                className="input-field text-sm"
+                value={purchaseDate}
+                onChange={e => setPurchaseDate(e.target.value)}
+              />
+            </div>
             <div>
               <label className="text-xs text-gray-600 block mb-1">الحالة</label>
               <select className="input-field text-sm" value={status} onChange={e => setStatus(e.target.value)}>

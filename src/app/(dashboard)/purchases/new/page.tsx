@@ -16,6 +16,7 @@ export default function NewPurchasePage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [supplierId, setSupplierId] = useState("");
   const [primaryStoreId, setPrimaryStoreId] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
   const [status, setStatus] = useState("قيد التنفيذ");
   const [notes, setNotes] = useState("");
   const [showNewProduct, setShowNewProduct] = useState(false);
@@ -95,6 +96,7 @@ export default function NewPurchasePage() {
     const validTotal = validItems.reduce((s, i) => s + i.quantity * i.unit_cost, 0);
     const { error, data } = await mutate<{ id: string; purchase_number: number }>('POST', '/api/purchases/invoices', {
       supplier_id: supplierId || null,
+      purchase_date: purchaseDate || undefined,
       status,
       total_amount: validTotal,
       notes,
@@ -111,6 +113,8 @@ export default function NewPurchasePage() {
     sub: s.phone || undefined,
     extra: `مستحق: ${formatEGP(s.balance)} ج`,
   }));
+
+  const selectedSupplier = suppliersData?.items.find(s => s.id === supplierId);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -172,11 +176,24 @@ export default function NewPurchasePage() {
               placeholder="🔍 ابحث عن مورد بالاسم أو الهاتف..."
               emptyLabel="— بدون مورد —"
             />
+            {supplierId && selectedSupplier && (
+              <div className="mt-2 flex items-center justify-between bg-purple-50 border border-purple-200 rounded-lg p-2.5 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🏭</span>
+                  <div>
+                    <span className="text-gray-600 block text-[11px] font-semibold">مستحقات المورد الحالية:</span>
+                    <strong className={`font-mono text-sm ${Number(selectedSupplier.balance) > 0 ? 'text-red-700 font-bold' : 'text-slate-800'}`}>
+                      {formatEGP(Number(selectedSupplier.balance))} ج
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <div>
             <label className="text-xs text-gray-600 block mb-1">المخزن الافتراضي للاستلام</label>
             <select
-              className="input-field text-sm"
+              className="input-field text-sm font-semibold"
               value={primaryStoreId}
               onChange={(e) => {
                 const newId = e.target.value;
@@ -189,17 +206,28 @@ export default function NewPurchasePage() {
             >
               {stores?.map(s => (
                 <option key={s.id} value={s.id}>
-                  {s.name}
+                  🏢 {s.name}
                 </option>
               ))}
             </select>
           </div>
-          <div>
-            <label className="text-xs text-gray-600 block mb-1">الحالة</label>
-            <select className="input-field text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="قيد التنفيذ">قيد التنفيذ (مسودة - لا تخصم المخزون)</option>
-              <option value="مكتملة">مكتملة (نهائية - تضيف للمخزون)</option>
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-bold text-gray-700 block mb-1">📅 تاريخ الفاتورة *</label>
+              <input
+                type="date"
+                className="input-field text-sm font-semibold"
+                value={purchaseDate}
+                onChange={(e) => setPurchaseDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">الحالة</label>
+              <select className="input-field text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option value="قيد التنفيذ">قيد التنفيذ (مسودة)</option>
+                <option value="مكتملة">مكتملة (تضيف للمخزون)</option>
+              </select>
+            </div>
           </div>
         </div>
 
