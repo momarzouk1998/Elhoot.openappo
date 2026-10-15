@@ -25,6 +25,9 @@ ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 ENV JWT_SECRET="dummy-secret-for-build"
 ENV NEXT_PUBLIC_SITE_URL="https://elhoot.openappo.com"
 ENV NEXT_PUBLIC_APP_NAME="شركة الحوت للأدوات الكهربائية"
+# رقم نسخة ثابت لكل build (نفس القيمة للسيرفر والمتصفح) — شريط "تم تحديث النظام"
+ARG BUILD_ID=dev
+ENV BUILD_ID=$BUILD_ID
 RUN npx prisma generate && npm run build
 
 FROM base AS runner
